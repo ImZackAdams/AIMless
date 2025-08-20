@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AIMless • Minimal P2P Chat</title>
+<style>
+  :root { --bg:#0b0b0f; --panel:#16161d; --ink:#eaeaf2; --muted:#9aa0a6; --accent:#8b5cf6; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--ink); }
+  .wrap { max-width:900px; margin:24px auto; padding:16px; }
+  h1 { font-size:18px; margin:0 0 12px; }
+  .card { background:var(--panel); border-radius:12px; padding:16px; }
+  .grid { display:grid; gap:16px; grid-template-columns: 1fr 1fr; }
+  label { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+  textarea { width:100%; height:140px; background:#0f1115; color:var(--ink); border:1px solid #2a2f3a; border-radius:8px; padding:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  input[type="text"] { width:100%; padding:10px; border-radius:8px; border:1px solid #2a2f3a; background:#0f1115; color:var(--ink); }
+  .row { display:flex; gap:8px; align-items:center; }
+  .small { font-size:12px; color:var(--muted); }
+  .chat { height:280px; overflow:auto; border:1px solid #2a2f3a; border-radius:10px; padding:10px; background:#0f1115; }
+  .msg.me { text-align:right; }
+  .msg .bubble { display:inline-block; padding:8px 12px; border-radius:16px; margin:4px 0; max-width:70%; word-wrap:break-word; }
+  .msg.me .bubble { background:#6d28d9; color:#fff; }
+  .msg.peer .bubble { background:#1f2430; }
+  .footer { margin-top:16px; display:flex; gap:8px; }
+  .hint { margin-top:6px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AIMless • Minimal P2P Chat (single file)</h1>
+  <div class="grid">
+    <!-- LEFT: Signaling -->
+    <div class="card">
+      <h2 style="margin:0 0 8px;">1) Signaling (copy/paste only)</h2>
+      <div class="row">
+        <button id="hostBtn">I am Host (create offer)</button>
+        <button id="peerBtn">I am Peer (use offer)</button>
+      </div>
+      <div class="hint small">Choose a role. Host creates an Offer; Peer pastes it and returns an Answer.</div>
+
+      <div style="margin-top:12px;">
+        <label for="remoteSdp">Paste the OTHER side's blob here</label>
+        <textarea id="remoteSdp" placeholder="Paste Offer (if you're Peer) or Answer (if you're Host) here..."></textarea>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label for="localSdp">Share this with the OTHER side</label>
+        <textarea id="localSdp" readonly placeholder="Your Offer/Answer will appear here..."></textarea>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button id="applyRemoteBtn" disabled>Apply Remote</button>
+        <span id="status" class="small mono">idle</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: Chat -->
+    <div class="card">
+      <h2 style="margin:0 0 8px;">2) Chat</h2>
+      <div id="chat" class="chat"></div>
+      <div class="footer">
+        <input id="name" type="text" placeholder="Your name (optional)" />
+      </div>
+      <div class="footer">
+        <input id="message" type="text" placeholder="Type a message..." disabled />
+        <button id="sendBtn" disabled>Send</button>
+      </div>
+      <div class="hint small">Connection uses WebRTC DataChannel with STUN only. No server, no storage.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/**
+ * Minimal WebRTC P2P chat with copy/paste signaling.
+ * We wait for ICE gathering to complete, so each side shares a single blob (non-trickle ICE).
+ */
+
+const rtcConfig = {
+  iceServers: [
+    { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }
+  ]
+};
+
+let pc;
+let dc;
+let isHost = null;
+
+const $ = (id) => document.getElementById(id);
+const hostBtn = $("hostBtn");
+const peerBtn = $("peerBtn");
+const applyRemoteBtn = $("applyRemoteBtn");
+const remoteSdpEl = $("remoteSdp");
+const localSdpEl = $("localSdp");
+const statusEl = $("status");
+const chatEl = $("chat");
+const nameEl = $("name");
+const msgEl = $("message");
+const sendBtn = $("sendBtn");
+
+function logStatus(txt) { statusEl.textContent = txt; }
+
+function addMsg(who, text, mine=false) {
+  const div = document.createElement("div");
+  div.className = "msg " + (mine ? "me" : "peer");
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = (who ? who + ": " : "") + text;
+  div.appendChild(bubble);
+  chatEl.appendChild(div);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function enableChatUI(enable) {
+  msgEl.disabled = !enable;
+  sendBtn.disabled = !enable;
+}
+
+function waitIceComplete(pc) {
+  // Non-trickle ICE: wait until all ICE candidates are gathered
+  if (pc.iceGatheringState === "complete") return Promise.resolve();
+  return new Promise((resolve) => {
+    const check = () => {
+      if (pc.iceGatheringState === "complete") {
+        pc.removeEventListener("icegatheringstatechange", check);
+        resolve();
+      }
+    };
+    pc.addEventListener("icegatheringstatechange", check);
+  });
+}
+
+function pack(desc) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(desc))));
+}
+function unpack(b64) {
+  return JSON.parse(decodeURIComponent(escape(atob(b64))));
+}
+
+function setupPeerConnection() {
+  pc = new RTCPeerConnection(rtcConfig);
+
+  pc.onconnectionstatechange = () => {
+    logStatus("pc: " + pc.connectionState);
+    if (pc.connectionState === "connected") enableChatUI(true);
+    if (pc.connectionState === "disconnected" || pc.connectionState === "failed" || pc.connectionState === "closed") {
+      enableChatUI(false);
+    }
+  };
+
+  // If you're the peer, you'll get the data channel from the host here
+  pc.ondatachannel = (ev) => {
+    dc = ev.channel;
+    attachDataChannel(dc);
+  };
+}
+
+function attachDataChannel(channel) {
+  dc = channel;
+  dc.onopen = () => { logStatus("datachannel: open"); enableChatUI(true); };
+  dc.onclose = () => { logStatus("datachannel: closed"); enableChatUI(false); };
+  dc.onmessage = (ev) => {
+    try {
+      const { name, text } = JSON.parse(ev.data);
+      addMsg(name || "Peer", text, false);
+    } catch {
+      addMsg("Peer", String(ev.data), false);
+    }
+  };
+}
+
+async function becomeHost() {
+  isHost = true;
+  hostBtn.disabled = true;
+  peerBtn.disabled = true;
+  applyRemoteBtn.disabled = false;
+  setupPeerConnection();
+
+  // Host creates data channel
+  const channel = pc.createDataChannel("chat", { ordered: true });
+  attachDataChannel(channel);
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  logStatus("gathering ICE for offer…");
+  await waitIceComplete(pc);
+
+  const fullOffer = pc.localDescription;
+  localSdpEl.value = pack(fullOffer); // share this with Peer
+  logStatus("offer ready — send to peer, then paste their answer and click Apply Remote");
+}
+
+async function becomePeer() {
+  isHost = false;
+  hostBtn.disabled = true;
+  peerBtn.disabled = true;
+  applyRemoteBtn.disabled = false;
+  setupPeerConnection();
+  logStatus("paste host's offer and click Apply Remote");
+}
+
+async function applyRemote() {
+  try {
+    const blob = remoteSdpEl.value.trim();
+    if (!blob) { alert("Paste the other side's blob first."); return; }
+    const desc = unpack(blob);
+
+    if (isHost) {
+      // Host: apply peer's ANSWER
+      await pc.setRemoteDescription(desc);
+      logStatus("answer applied; connecting…");
+    } else {
+      // Peer: apply host's OFFER, then create/send ANSWER
+      await pc.setRemoteDescription(desc);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      logStatus("gathering ICE for answer…");
+      await waitIceComplete(pc);
+      localSdpEl.value = pack(pc.localDescription); // share this back to Host
+      logStatus("answer ready — send to host");
+    }
+  } catch (e) {
+    console.error(e);
+    logStatus("error: " + e.message);
+  }
+}
+
+function sendMessage() {
+  const text = msgEl.value.trim();
+  if (!text || !dc || dc.readyState !== "open") return;
+  const name = nameEl.value.trim();
+  dc.send(JSON.stringify({ name, text }));
+  addMsg(name || "Me", text, true);
+  msgEl.value = "";
+}
+
+hostBtn.addEventListener("click", becomeHost);
+peerBtn.addEventListener("click", becomePeer);
+applyRemoteBtn.addEventListener("click", applyRemote);
+sendBtn.addEventListener("click", sendMessage);
+msgEl.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendMessage(); }});
+</script>
+</body>
+</html>
