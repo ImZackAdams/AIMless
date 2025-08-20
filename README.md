@@ -3,7 +3,7 @@
 *A WebRTC chat app with absolutely no purpose, direction, or server*
 
 ```
-💀 5KB of pure chaos
+💀 50KB of pure chaos
 🚫 Zero dependencies 
 🤝 Two users max (more would require planning)
 📋 Connection via clipboard (like animals)
