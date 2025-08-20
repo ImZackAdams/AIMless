@@ -2,7 +2,7 @@
 
 **One HTML file. Zero dependencies. Peer-to-peer chat.**
 
-A 5KB single-file WebRTC DataChannel implementation that enables encrypted P2P chat directly in your browser. No server, no build process, no npm. Just open `index.html` and start chatting.
+A 10KB single file WebRTC DataChannel implementation that enables encrypted P2P chat directly in your browser. No server, no build process, no npm. Just open `index.html`, swap codes and start chatting.
 
 ```html
 <!-- That's it. That's the entire app. -->
@@ -13,10 +13,10 @@ A 5KB single-file WebRTC DataChannel implementation that enables encrypted P2P c
 
 ## ✨ Features
 
-- **5KB total** - HTML, CSS, and JavaScript in a single file
+- **10KB total** - HTML, CSS, and JavaScript in a single file
 - **Zero backend** - No signaling server, no STUN/TURN infrastructure needed
 - **Copy-paste connection** - Share connection strings via any text medium
-- **Encrypted by default** - WebRTC DTLS encryption built-in
+- **Encrypted by default** - WebRTC DTLS encryption built in
 - **Dark mode UI** - Clean, modern interface with real-time connection status
 - **Robust parsing** - Accepts Base64, JSON, or raw SDP formats
 
@@ -25,10 +25,7 @@ A 5KB single-file WebRTC DataChannel implementation that enables encrypted P2P c
 ## 🚀 Quick Start
 
 ### 1. Get the file
-```bash
-curl -O https://raw.githubusercontent.com/[your-repo]/aimless/main/index.html
-# or just save the HTML file
-```
+just save the HTML file
 
 ### 2. Open it
 **Option A: Direct file (simplest)**
@@ -81,7 +78,7 @@ The interface shows three connection state pills:
 | **ICE** | `idle` → `checking` → `connected` | NAT traversal progress |
 | **DC** | `idle` → `connecting` → `open` | DataChannel ready state |
 
-When all three pills are green, you're chatting peer-to-peer!
+When all three pills are green, you're chatting P2P!
 
 ---
 
@@ -99,7 +96,7 @@ const rtcConfig = {
 ```
 
 ### Signaling Format
-The app uses a **non-trickle ICE** approach, gathering all candidates before creating the connection blob:
+The app uses a **non trickle ICE** approach, gathering all candidates before creating the connection blob:
 
 ```javascript
 // Waits 300ms after last candidate before packaging
@@ -158,7 +155,7 @@ index.html (5KB)
 
 ## 🔒 Security & Privacy
 
-- **End-to-end encrypted**: DTLS encryption via WebRTC
+- **End to end encrypted**: DTLS encryption via WebRTC
 - **No server logs**: Direct P2P connection
 - **No persistence**: Messages exist only in memory
 - **No tracking**: No analytics, no cookies, no external requests
@@ -184,7 +181,7 @@ index.html (5KB)
 - ✅ **Safari**: Full support (even on `file://`)
 - ✅ **Firefox**: Full support
 - ✅ **Edge**: Full support
-- ⚠️ **Mobile**: Works best over HTTPS
+- ⚠️ **Mobile**: Untested
 
 ---
 
