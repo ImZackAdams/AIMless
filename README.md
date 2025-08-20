@@ -3,7 +3,7 @@
 *A WebRTC chat app with absolutely no purpose, direction, or server*
 
 ```
-💀 50KB of pure chaos
+💀 10KB of pure chaos
 🚫 Zero dependencies 
 🤝 Two users max (more would require planning)
 📋 Connection via clipboard (like animals)
@@ -13,7 +13,7 @@
 
 ## What The Hell Is This?
 
-Some absolute madlad crammed an entire P2P encrypted chat application into a single HTML file. No backend. No build step. No npm. It's literally one file you can email to your mom (please don't).
+I crammed an entire P2P encrypted chat application into a single HTML file. No backend. No build step. No npm. It's literally one file you can email to your mom (please don't).
 
 **Current Status:** Somehow works™
 
