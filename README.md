@@ -1,234 +1,231 @@
 # AIMless
 
-**One HTML file. Zero dependencies. Peer-to-peer chat.**
+*A WebRTC chat app with absolutely no purpose, direction, or server*
 
-A 10KB single file WebRTC DataChannel implementation that enables encrypted P2P chat directly in your browser. No server, no build process, no npm. Just open `index.html`, swap codes and start chatting.
-
-```html
-<!-- That's it. That's the entire app. -->
-<script src="index.html"></script>
+```
+💀 5KB of pure chaos
+🚫 Zero dependencies 
+🤝 Two users max (more would require planning)
+📋 Connection via clipboard (like animals)
 ```
 
 ---
 
-## ✨ Features
+## What The Hell Is This?
 
-- **10KB total** - HTML, CSS, and JavaScript in a single file
-- **Zero backend** - No signaling server, no STUN/TURN infrastructure needed
-- **Copy-paste connection** - Share connection strings via any text medium
-- **Encrypted by default** - WebRTC DTLS encryption built in
-- **Dark mode UI** - Clean, modern interface with real-time connection status
-- **Robust parsing** - Accepts Base64, JSON, or raw SDP formats
+Some absolute madlad crammed an entire P2P encrypted chat application into a single HTML file. No backend. No build step. No npm. It's literally one file you can email to your mom (please don't).
+
+**Current Status:** Somehow works™
+
+**Production Ready?** *nervous laughter*
 
 ---
 
-## 🚀 Quick Start
+## 🎪 The Circus Installation Guide
 
-### 1. Get the file
-just save the HTML file
-
-### 2. Open it
-**Option A: Direct file (simplest)**
+### Method 1: YOLO Mode
 ```bash
-# Just double-click index.html
-# Works on file:// protocol
+# Just fucking double-click index.html
+# Yes, from your Downloads folder
+# Yes, it actually works
 ```
 
-**Option B: Local server (recommended)**
+### Method 2: Slightly Less Cursed
 ```bash
-# Python
 python3 -m http.server 8000
-
-# Node
-npx serve .
-
-# Open http://localhost:8000
+# Congrats, you're now a sysadmin
 ```
 
-### 3. Connect with a friend
-1. **Host** creates offer → copies Base64 → sends to friend
-2. **Friend** pastes → sets remote → creates answer → sends back  
-3. **Host** sets remote → **connected!** 🎉
+### Method 3: Peak Web Development
+```bash
+# Email index.html to your friend
+# They open it
+# You're now chatting P2P
+# Web developers hate this one weird trick
+```
 
 ---
 
-## 🎮 How It Works
+## 🤡 How To Connect (Prepare for Pain)
 
-### Connection Flow
+### Step 1: The Ritual Begins
+- One person clicks **Host** (the brave one)
+- Other person clicks **Peer** (the coward)
+- Both contemplate life choices
 
-```mermaid
-graph LR
-    A[Host: Create Offer] --> B[Copy Base64]
-    B --> C[Send to Peer]
-    C --> D[Peer: Set Remote]
-    D --> E[Peer: Create Answer]
-    E --> F[Copy Base64]
-    F --> G[Send to Host]
-    G --> H[Host: Set Remote]
-    H --> I[Connected!]
+### Step 2: The Copypasta Dance
+1. **Host** clicks "Create Offer"
+2. A wild Base64 blob appears! 
+3. Copy this cursed string
+4. Send it via:
+   - Discord (will probably mangle it)
+   - Email (boomer mode)
+   - Carrier pigeon (most reliable)
+   - Writing it on paper (absolute madness)
+
+### Step 3: The Exchange
+```
+Host: "Here's my blob bro"
+Peer: "Thanks, here's mine"
+Host: "Why are we like this"
+Peer: "I don't know"
+[CONNECTION ESTABLISHED]
 ```
 
-### UI Components
-
-The interface shows three connection state pills:
-
-| Pill | States | What it means |
-|------|---------|--------------|
-| **PC** | `idle` → `connecting` → `connected` | PeerConnection lifecycle |
-| **ICE** | `idle` → `checking` → `connected` | NAT traversal progress |
-| **DC** | `idle` → `connecting` → `open` | DataChannel ready state |
-
-When all three pills are green, you're chatting P2P!
+### Step 4: Success(?)
+When all three pills turn green, you've achieved P2P. Your ISP is confused. Your firewall is crying. But you're chatting.
 
 ---
 
-## 🛠️ Technical Implementation
+## 🏗️ Architecture (lmao)
 
-### WebRTC Configuration
+```
+index.html (5KB of nightmares)
+├── CSS (dark mode because we code at 3am)
+├── HTML (two divs and a dream)
+└── JavaScript (where the magic/curse happens)
+    ├── Copy/paste "signaling" (revolutionary)
+    ├── WebRTC (doing heavy lifting)
+    └── Error handling (console.error lol)
+```
+
+### State Management
 ```javascript
-const rtcConfig = {
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" }
-  ],
-  iceCandidatePoolSize: 10
-};
+let role = 'host';  // or 'peer', we don't judge
+let pc, dc;         // undefined until they're not
 ```
 
-### Signaling Format
-The app uses a **non trickle ICE** approach, gathering all candidates before creating the connection blob:
-
+### The Entire Signaling Server
 ```javascript
-// Waits 300ms after last candidate before packaging
-pc.onicecandidate = () => {
-  clearTimeout(gatherTimer);
-  gatherTimer = setTimeout(() => {
-    $('local').value = pack(pc.localDescription);
-  }, 300);
-};
+// Step 1: Copy
+navigator.clipboard.writeText(blob)
+
+// Step 2: Paste
+// There is no step 3
 ```
 
-### Smart Blob Detection
-Automatically detects and parses three formats:
+---
+
+## 🔬 Technical "Features"
+
+### Non-Trickle ICE (Because We're Lazy)
 ```javascript
-if (looksLikeJson(raw))        // {"type":"offer","sdp":"v=0\r\n..."}
-else if (isBase64(raw))        // eyJ0eXBlIjoib2ZmZXIiLCJzZHA6I...
-else if (looksLikeSdp(raw))    // v=0\r\no=- 463593279...
+// Wait 300ms and pray all candidates arrived
+setTimeout(() => {
+  $('local').value = pack(pc.localDescription);
+}, 300);
 ```
 
-### Message Protocol
-Simple JSON envelope over DataChannel:
+### Blob Format Detection (Pattern Matching Go Brrr)
 ```javascript
-{ 
-  "name": "Alice",  // optional
-  "text": "Hello!"
-}
+if (looksLikeJson(raw))      // Probably JSON
+else if (isBase64(raw))      // Probably Base64  
+else if (looksLikeSdp(raw))  // Definitely cursed
+else throw new Error('¯\\_(ツ)_/¯');
 ```
 
----
-
-## 🎨 Code Architecture
-
-```
-index.html (5KB)
-├── <style>     130 lines - Dark theme, pills, chat bubbles
-├── HTML        50 lines  - Two-panel layout
-└── <script>    180 lines - Complete WebRTC implementation
-    ├── State management (role, pc, dc)
-    ├── UI helpers (pills, status, messages)
-    ├── Blob handling (pack/unpack Base64)
-    ├── WebRTC lifecycle (setup, connect, chat)
-    └── Event handlers (buttons, keyboard)
-```
-
-### Key Functions
-
-| Function | Purpose |
-|----------|---------|
-| `setupPC()` | Initializes RTCPeerConnection with event handlers |
-| `wireDC(channel)` | Configures DataChannel for messaging |
-| `pack()/unpack()` | Base64 encode/decode for signaling |
-| `createLocal()` | Generates offer (host) or answer (peer) |
-| `setRemote()` | Ingests any blob format intelligently |
-
----
-
-## 🔒 Security & Privacy
-
-- **End to end encrypted**: DTLS encryption via WebRTC
-- **No server logs**: Direct P2P connection
-- **No persistence**: Messages exist only in memory
-- **No tracking**: No analytics, no cookies, no external requests
-
-**⚠️ Note**: Connection blobs may contain IP addresses. Share only with trusted parties.
-
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-| Problem | Solution |
-|---------|----------|
-| **Copy button fails** | Normal on `file://` - select and copy manually |
-| **Connection stuck** | Both behind symmetric NAT - needs TURN server |
-| **"Invalid blob"** | Check for extra whitespace or smart quotes |
-| **Chat disabled** | Wait for DC pill to turn green |
-
-### Browser Compatibility
-
-- ✅ **Chrome/Brave**: Full support
-- ✅ **Safari**: Full support (even on `file://`)
-- ✅ **Firefox**: Full support
-- ✅ **Edge**: Full support
-- ⚠️ **Mobile**: Untested
-
----
-
-## 🚧 Limitations
-
-- **STUN only** - No TURN fallback (yet)
-- **Text only** - No file transfer (yet)
-- **Two users** - No group chat
-- **No history** - Messages aren't saved
-
----
-
-## 🔮 Extending
-
-Want to add features? The entire codebase is in one file:
-
+### "Database"
 ```javascript
-// Add typing indicators
-$('msg').oninput = () => {
-  dc.send(JSON.stringify({typing: true}));
-};
-
-// Add timestamps
-const time = new Date().toLocaleTimeString();
-
-// Add connection stats
-const stats = await pc.getStats();
+const database = []; // That's it. That's the database.
+// Oh wait, we don't even have that.
 ```
 
 ---
 
-## 🎯 Philosophy
+## 🎨 UI/UX Masterclass
 
-AIMless proves that modern P2P communication doesn't require complex infrastructure. One HTML file + WebRTC = secure, private chat.
+- **Three pills** that change colors (green = good, red = bad, revolutionary UX)
+- **Two textareas** for your blob needs
+- **One chat box** (wanting more is capitalism)
+- **Dark theme** (because light attracts bugs)
 
-No webpack. No React. No npm. No Kubernetes. No AWS.  
-Just `index.html` and a friend.
+### Connection Status Pills
+
+| Pill | What It Means | What It Really Means |
+|------|---------------|---------------------|
+| PC: `idle` | Not started | Procrastinating |
+| PC: `connecting` | Trying | WebRTC doing WebRTC things |
+| PC: `connected` | Working | Holy shit it worked |
+| ICE: `checking` | Finding path | NAT traversal go brrr |
+| DC: `open` | Can chat | Time to send memes |
+
+---
+
+## 🚨 Security "Model"
+
+- ✅ **E2E Encrypted** (thanks WebRTC, we did nothing)
+- ✅ **No cookies** (we're not monsters)
+- ✅ **No tracking** (we literally don't care)
+- ✅ **No server logs** (what server?)
+- ⚠️ **No authentication** (your friend might be three kids in a trenchcoat)
+- ⚠️ **Blob contains your IP** (share wisely, or don't, we're not your mom)
+
+---
+
+## 💀 Known Issues (Features)
+
+| "Bug" | Status | Workaround |
+|-------|--------|------------|
+| Can't connect through corporate firewall | Won't fix | Quit your job |
+| Copy button fails on `file://` | Browser's fault | Ctrl+C like a caveman |
+| Only supports 2 users | By design | Make better friends |
+| No message history | RAM is temporary | Remember harder |
+| No mobile app | This IS the app | Your phone has a browser, Kevin |
+| Sometimes just doesn't work | Yes | Try again (or don't) |
+
+---
+
+## 🤔 Philosophy
+
+> "Why would you do this?"  
+> — Everyone
+
+> "Your scientists were so preoccupied with whether they could, they didn't stop to think if they should."  
+> — Dr. Ian Malcolm, about this project probably
+
+This project exists because:
+1. Signaling servers are a scam by Big WebSocket
+2. We were told it couldn't be done in one file
+3. Sometimes you just need to chat without AWS knowing about it
+4. `npm install` is for cowards
+
+---
+
+## 🔮 Roadmap
+
+- [x] Make it work
+- [x] Make it cursed
+- [ ] Make it worse
+- [ ] Add blockchain (just kidding, we're not that evil)
+- [ ] Group chat (would require actual effort)
+- [ ] File transfer (you have email for that)
+
+---
+
+## 🙏 Credits
+
+- **WebRTC**: For doing 99% of the work
+- **Google's STUN servers**: Thanks for the free infrastructure, nerds
+- **Stack Overflow**: You know why
+- **The void**: For staring back
 
 ---
 
 ## 📜 License
 
-MIT - Copy it, modify it, email it to a friend.
+MIT (Memes Included, Thanks)
+
+Do whatever you want with this cursed code. Email it. Print it. Fax it. Deploy it to production (don't). We're not responsible for the consequences.
 
 ---
 
 <p align="center">
-  <sub>Built with 🗨️ and minimal JavaScript</sub><br>
-  <sub>If you can read this README, you can read the entire source code</sub>
+  <sub>A project that shouldn't exist, but does</sub><br>
+  <sub>5KB of bad decisions</sub><br>
+  <sub>🔥 This is fine 🔥</sub>
+</p>
+
+<p align="center">
+  <br>
+  <i>"It's not a bug, it's the entire project"</i>
 </p>
