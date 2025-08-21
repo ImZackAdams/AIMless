@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Browser Native Compute — stop renting computers you already own</title>
+  <style>
+    body { font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px auto; max-width: 860px; padding: 0 16px; color: #111; }
+    h1, h2, h3 { line-height: 1.2; }
+    pre, code { background: #f6f8fa; border-radius: 6px; padding: 12px; display: block; overflow-x: auto; }
+    blockquote { border-left: 4px solid #ddd; padding-left: 12px; color: #444; margin: 16px 0; }
+    hr { border: 0; border-top: 1px solid #eee; margin: 28px 0; }
+    ul { padding-left: 20px; }
+    .muted { color: #666; font-size: 0.95em; }
+  </style>
+</head>
+<body>
+
+<h1>Browser Native Compute, stop renting computers you already own</h1>
+
+<h2>The part nobody wants to admit</h2>
+<p>
+While teams were drawing boxes and arrows and convincing themselves their simple app needed a cluster, the browser quietly became a real computer. Not a document viewer. A portable runtime with networking, storage, cryptography, GPU compute, and a sane sandbox that ships on billions of devices. You can already open two tabs, do a cryptographic handshake, form an encrypted peer connection, store data locally, run kernels on the GPU, and keep working offline with standard platform APIs. WebRTC gives encrypted peer to peer transport, Web Crypto exposes audited primitives, WebAssembly runs compiled code at competitive speeds, WebGPU exposes modern GPU pipelines, and Service Workers with IndexedDB make local first design practical. These are open standards that ship in mainstream browsers.
+</p>
+
+<p>
+If you keep pushing JSON through a server you do not need, that is a business decision, not a technical limitation.
+</p>
+
+<h2>Reality check</h2>
+<p>
+<strong>WebRTC</strong> is a secure transport stack that negotiates connectivity through ICE, then runs SRTP for media and SCTP data channels inside DTLS. Encryption is not optional here. Data channels are SCTP over DTLS by spec, with reliable ordered and low latency unordered modes available.
+</p>
+<p>
+<strong>WebGPU</strong> is a modern API that maps to Metal, Vulkan, and Direct3D twelve. It enables compute shaders in the browser and practical local inference for many workloads.
+</p>
+<p>
+<strong>WebAssembly</strong> is a safe portable binary format. It targets languages like Rust, C, and C plus plus and runs beside JavaScript with predictable performance for compute heavy paths.
+</p>
+<p>
+<strong>Web Crypto</strong> provides audited primitives such as ECDSA P two five six and AES GCM from both windows and workers. You do not need to ship a crypto library for basic signatures, key generation, and symmetric encryption.
+</p>
+<p>
+<strong>Service Workers and IndexedDB</strong> give you a programmable proxy and durable structured storage on the device. Offline first is not a trick, it is the default posture when you use the platform.
+</p>
+<p>
+<strong>Modern JS engines</strong> JIT to native with tiered compilers like Sparkplug, Maglev, and TurboFan so the hot code gets fast.
+</p>
+
+<h2>The stack, for people who ship</h2>
+<ul>
+  <li><strong>JavaScript</strong> for orchestration, IO, workers, and glue. The engine tiering exists to make hot paths fast.</li>
+  <li><strong>WebAssembly</strong> for deterministic compute, SIMD, and predictable memory. Use it when the loop matters.</li>
+  <li><strong>WebGPU</strong> for graphics and general compute. It is the web face of modern GPU stacks.</li>
+  <li><strong>WebRTC</strong> for secure peer transport with ICE, STUN or TURN, DTLS, SRTP, and SCTP data channels.</li>
+  <li><strong>Web Crypto</strong> for keys, signatures, agreement, and authenticated encryption.</li>
+  <li><strong>Service Worker with IndexedDB</strong> for offline first logic and durable client side state.</li>
+</ul>
+
+<h2>What I actually built with this approach: </h2>
+<ul>
+  <li>
+    <strong>AIMless</strong><br>
+    A single page peer to peer chat that runs directly in the browser. Two users open the same HTML file, exchange a session blob, and a WebRTC data channel opens. No app server and no accounts. Transport encryption is handled by WebRTC. You can literally email the file to someone and talk.
+  </li>
+  <li>
+    <strong>NyxMesh</strong><br>
+    A peer to peer distributed compute demo that turns browsers into coordinator and worker roles over WebRTC. It includes a small task library like matrix multiply, prime search, Mandelbrot, array sort, hash work, and Monte Carlo pi, and it reports basic metrics. Copy and paste signaling on purpose. The README is explicit about limits. The point is to prove the pattern with zero backend.
+  </li>
+  <li>
+    <strong>NyxPay</strong><br>
+    A browser only payments experiment. The page builds transactions on the client, signs with a wallet, and broadcasts via RPC. No custom gateway in the middle. The current repo is an in progress toolkit, shaped to keep keys on the device and to keep the page as the tool not the custodian.
+  </li>
+  <li>
+    <strong>nyx local</strong><br>
+    A file based payment terminal that packages the payments logic into a self contained HTML document. You generate a checkout page, send the file any way you want, the recipient opens it, connects a wallet, and broadcasts. Distribution is as simple as a file.
+  </li>
+</ul>
+
+<h2>Security, where most people get it wrong</h2>
+<p>
+WebRTC requires encryption. You do not add it later. DTLS for data channels and DTLS SRTP for media are part of the protocol. Keys are derived inside the transport. This is not your leaky endpoint. It is a standards based secure channel implemented by browser vendors and vetted in the open.
+</p>
+<p>
+The correct place for user keys is the device. The Web Crypto API exposes a careful surface for generating and using keys including non extractable keys. Sign locally. Encrypt locally. Sync only what is necessary.
+</p>
+<p>
+You still have to care about XSS and supply chain risk. Use CSP, SRI, and fewer dependencies. The browser gives you strong building blocks, not immunity.
+</p>
+
+<h2>Philosophy, take responsibility</h2>
+<ul>
+  <li><strong>Local first</strong>. Data begins on devices and stays there unless there is a reason to move it. Servers can replicate and assist, they are not the source of truth.</li>
+  <li><strong>Zero lock in</strong>. Use plain files and standards. HTML for UI, JSON or SQLite for data, Web APIs for transport and compute. If you need to move, you move.</li>
+  <li><strong>Servers should be replaceable</strong>. If you need rendezvous for signaling or a relay for stubborn networks, keep it tiny and open. TURN exists for a reason. Pay the few dollars, keep it optional.</li>
+  <li><strong>Complexity is a tax</strong>. If your MVP cannot ship as a static site and a single worker, you are probably rebuilding solved problems. Start smaller.</li>
+</ul>
+
+<h2>Addressing the cope</h2>
+<p>
+<strong>NAT traversal.</strong> That is what ICE was built for. Use STUN first and fall back to TURN when needed. The data still stays encrypted end to end.
+</p>
+<p>
+<strong>Big data.</strong> IndexedDB stores significant structured data in the client. Most product data is smaller than the slide deck suggests.
+</p>
+<p>
+<strong>Enterprise.</strong> Enterprises run modern browsers. Modern browsers run this stack. If a policy forbids it, the blocker is policy, not physics.
+</p>
+<p>
+<strong>Performance.</strong> Use the right tool. JS for orchestration, Wasm for hot loops, WebGPU for kernels. Expect wins in compute heavy paths and parity elsewhere. The research and vendor notes are public.
+</p>
+
+<h2>Stop reading. Start building</h2>
+<p class="muted">This is the full AIMless single file chat. Copy it into its own HTML file to run it. Below it is shown as escaped code for reading.</p>
+
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot; /&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot; /&gt;
+&lt;title&gt;AIMless · P2P Chat (single file)&lt;/title&gt;
+&lt;style&gt;
+  :root { --bg:#0b0b0f; --panel:#16161d; --ink:#eaeaf2; --muted:#a7a7b3; --accent:#9b5cff; --accent2:#b47dff; }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 10% 0%, #141421 0%, var(--bg) 60%);color:var(--ink);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:18px;display:flex;justify-content:center}
+  .wrap{width:100%;max-width:1000px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .card{background:var(--panel);border:1px solid #222231;border-radius:14px;padding:14px}
+  h1{margin:0 0 8px;font-size:18px}
+  h2{margin:0 0 10px;font-size:15px;color:var(--muted)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn{background:var(--accent);color:#0b0b0f;border:0;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
+  .btn:hover{background:var(--accent2)}
+  .btn.secondary{background:#2a2a38;color:#var(--ink);border:1px solid #333349}
+  .btn.danger{background:#ff5757;color:#0b0b0f}
+  textarea,input{width:100%;background:#0f0f16;color:var(--ink);border:1px solid #282838;border-radius:8px;padding:10px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#24243a;color:var(--ink);font-size:12px}
+  .ok{background:#1d3d23;color:#7dff8b}.warn{background:#3d3d1d;color:#ffe57d}.bad{background:#3d1d1d;color:#ff7d7d}
+  .chat{height:320px;overflow:auto;border:1px solid #242436;border-radius:10px;background:#0f0f16;padding:10px}
+  .msg{margin:6px 0}
+  .me .bubble{background:#7b61ff;color:#fff}
+  .peer .bubble{background:#202437}
+  .bubble{display:inline-block;padding:8px 12px;border-radius:14px;max-width:70%;word-wrap:break-word}
+  .status{margin-top:8px}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class=&quot;wrap&quot;&gt;
+  &lt;!-- Signaling --&gt;
+  &lt;div class=&quot;card&quot;&gt;
+    &lt;h1&gt;🗨️ AIMless · P2P Chat&lt;/h1&gt;
+    &lt;h2&gt;1) Role&lt;/h2&gt;
+    &lt;div class=&quot;row&quot;&gt;
+      &lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;role&quot; value=&quot;host&quot; checked&gt; Host&lt;/label&gt;
+      &lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;role&quot; value=&quot;peer&quot;&gt; Peer&lt;/label&gt;
+      &lt;span id=&quot;pcState&quot; class=&quot;pill&quot;&gt;idle&lt;/span&gt;
+      &lt;span id=&quot;iceState&quot; class=&quot;pill&quot;&gt;idle&lt;/span&gt;
+      &lt;span id=&quot;dcState&quot; class=&quot;pill&quot;&gt;idle&lt;/span&gt;
+    &lt;/div&gt;
+
+    &lt;h2&gt;2) Signaling (copy/paste blob)&lt;/h2&gt;
+    &lt;div class=&quot;row&quot;&gt;
+      &lt;button id=&quot;btnCreate&quot; class=&quot;btn&quot;&gt;Create Offer/Answer&lt;/button&gt;
+      &lt;button id=&quot;btnCopy&quot; class=&quot;btn secondary&quot;&gt;📋 Copy&lt;/button&gt;
+      &lt;button id=&quot;btnReset&quot; class=&quot;btn danger&quot;&gt;Reset&lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;label class=&quot;mono&quot; style=&quot;margin-top:8px&quot;&gt;Your description (Base64)&lt;/label&gt;
+    &lt;textarea id=&quot;local&quot; rows=&quot;6&quot; class=&quot;mono&quot; placeholder=&quot;Your Base64 blob will appear here…&quot; readonly&gt;&lt;/textarea&gt;
+
+    &lt;label class=&quot;mono&quot; style=&quot;margin-top:8px&quot;&gt;Peer description (Base64 / JSON / raw SDP)&lt;/label&gt;
+    &lt;textarea id=&quot;remote&quot; rows=&quot;6&quot; class=&quot;mono&quot; placeholder=&quot;Paste the other side’s blob here…&quot;&gt;&lt;/textarea&gt;
+    &lt;div class=&quot;row&quot; style=&quot;margin-top:8px&quot;&gt;
+      &lt;button id=&quot;btnSetRemote&quot; class=&quot;btn&quot;&gt;Set Remote&lt;/button&gt;
+      &lt;span id=&quot;status&quot; class=&quot;status&quot;&gt;&lt;/span&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- Chat --&gt;
+  &lt;div class=&quot;card&quot;&gt;
+    &lt;h2&gt;3) Chat&lt;/h2&gt;
+    &lt;div class=&quot;row&quot;&gt;
+      &lt;input id=&quot;name&quot; placeholder=&quot;Your name (optional)&quot;&gt;
+    &lt;/div&gt;
+    &lt;div id=&quot;chat&quot; class=&quot;chat&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;row&quot; style=&quot;margin-top:8px&quot;&gt;
+      &lt;input id=&quot;msg&quot; placeholder=&quot;Type a message…&quot; disabled&gt;
+      &lt;button id=&quot;send&quot; class=&quot;btn&quot; disabled&gt;Send&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+/* ---------- shorthands ---------- */
+const $ = id =&gt; document.getElementById(id);
+const roleInputs = document.querySelectorAll('input[name=&quot;role&quot;]');
+
+/* ---------- state ---------- */
+let role = 'host';
+let pc, dc;
+
+/* ---------- config ---------- */
+const rtcConfig = {
+  iceServers: [
+    { urls: &quot;stun:stun.l.google.com:19302&quot; },
+    { urls: &quot;stun:stun1.l.google.com:19302&quot; }
+  ],
+  iceCandidatePoolSize: 10
+};
+
+/* ---------- ui helpers ---------- */
+function pill(el, text, cls=&quot;&quot;){ el.textContent=text; el.className=&quot;pill &quot;+cls; }
+function setStatus(t,c){ $('status').textContent=t; $('status').style.color=c||&quot;&quot;; }
+function addMsg(name, text, mine=false){
+  const div=document.createElement('div'); div.className='msg '+(mine?'me':'peer');
+  const b=document.createElement('div'); b.className='bubble'; b.textContent=(name?name+': ':'')+text;
+  div.appendChild(b); $('chat').appendChild(div); $('chat').scrollTop=$('chat').scrollHeight;
+}
+function enableChat(on){ $('msg').disabled=!on; $('send').disabled=!on; }
+
+/* ---------- robust blob handling ---------- */
+function pack(desc) {
+  // RTCSessionDescriptionInit -&gt; Base64
+  const json = JSON.stringify(desc);
+  return btoa(unescape(encodeURIComponent(json)));
+}
+function unpackBase64(b64) {
+  const json = decodeURIComponent(escape(atob(b64)));
+  return JSON.parse(json);
+}
+function looksLikeJson(s){ return /^\s*\{/.test(s.trim()); }
+function looksLikeSdp(s){ return /^\s*v=0\s*/.test(s.trim()); }
+
+/* ---------- peer connection ---------- */
+function setupPC(){
+  if(pc){ try{pc.close();}catch{} }
+  pc = new RTCPeerConnection(rtcConfig);
+
+  pc.onconnectionstatechange = () =&gt; {
+    const s = pc.connectionState;
+    pill($('pcState'), s, s==='connected'?'ok':(s==='failed'||s==='closed'?'bad':'warn'));
+    if (s==='connected' || s==='completed') { enableChat(true); setStatus('PC connected ✓','#7dff8b'); }
+    if (s==='disconnected'||s==='failed'||s==='closed') enableChat(false);
+  };
+
+  pc.oniceconnectionstatechange = () =&gt; {
+    const s = pc.iceConnectionState;
+    pill($('iceState'), s, (s==='connected'||s==='completed')?'ok':(s==='failed'?'bad':'warn'));
+  };
+
+  // Non-trickle-ish: dump Base64 localDescription after candidates settle briefly
+  let gatherTimer=null;
+  pc.onicecandidate = () =&gt; {
+    if (gatherTimer) clearTimeout(gatherTimer);
+    gatherTimer = setTimeout(() =&gt; {
+      if (pc.localDescription) $('local').value = pack(pc.localDescription);
+    }, 300);
+  };
+
+  if (role==='host') {
+    dc = pc.createDataChannel('chat',{ordered:true});
+    wireDC(dc);
+  } else {
+    pc.ondatachannel = (ev)=&gt;{ dc = ev.channel; wireDC(dc); };
+  }
+}
+
+function wireDC(channel){
+  pill($('dcState'), 'connecting', 'warn');
+
+  channel.onopen = ()=&gt;{
+    pill($('dcState'),'open','ok');
+    enableChat(true);
+    $('msg').focus();
+    setStatus('DataChannel open ✓','#7dff8b');
+  };
+
+  channel.onclose = ()=&gt;{
+    pill($('dcState'),'closed','bad');
+    enableChat(false);
+    setStatus('Disconnected','#ff7d7d');
+  };
+
+  channel.onerror = (e)=&gt;{
+    pill($('dcState'),'error','bad');
+    setStatus('DC error','orange');
+    console.error('DataChannel error:', e);
+  };
+
+  channel.onmessage = (ev)=&gt;{
+    try{
+      const {name,text}=JSON.parse(ev.data);
+      addMsg(name||'Peer', text, false);
+    }catch{
+      addMsg('Peer', String(ev.data), false);
+    }
+  };
+}
+
+/* ---------- actions ---------- */
+async function createLocal(){
+  if(!pc) setupPC();
+  if(role==='host'){
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    setStatus('Gathering ICE for offer…');
+  } else {
+    if (!pc.remoteDescription){ setStatus('Set remote offer first', '#ffe57d'); return; }
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    setStatus('Gathering ICE for answer…');
+  }
+}
+
+async function setRemote(){
+  try{
+    const raw = $('remote').value.trim();
+    if (!raw) { setStatus('Paste peer blob first', '#ffe57d'); return; }
+
+    let desc;
+    if (looksLikeJson(raw)) {
+      // Proper JSON (sdp should include \r\n escapes)
+      desc = JSON.parse(raw);
+    } else if (/^[A-Za-z0-9+/=\s]+$/.test(raw) &amp;&amp; !looksLikeSdp(raw)) {
+      // Base64 (preferred)
+      desc = unpackBase64(raw.replace(/\s+/g,''));
+    } else if (looksLikeSdp(raw)) {
+      // Raw SDP text pasted directly from some apps
+      desc = { type: (role === 'host' ? 'answer' : 'offer'), sdp: raw };
+    } else {
+      throw new Error('Unrecognized blob format');
+    }
+
+    if(!pc) setupPC();
+    await pc.setRemoteDescription(desc);
+    setStatus(`Remote ${desc.type} set`);
+  }catch(e){
+    console.error(e);
+    setStatus('Invalid blob (try Base64 or raw SDP)', '#ff7d7d');
+  }
+}
+
+function send(){
+  const text = $('msg').value.trim();
+  if(!text) return;
+  if(!dc || dc.readyState!=='open'){
+    setStatus('Not connected (DC not open)', '#ffe57d');
+    return;
+  }
+  const name = $('name').value.trim();
+  dc.send(JSON.stringify({name, text}));
+  addMsg(name||'Me', text, true);
+  $('msg').value='';
+}
+
+function resetAll(){
+  try{ dc&amp;&amp;dc.close(); }catch{} try{ pc&amp;&amp;pc.close(); }catch{}
+  pc=null; dc=null;
+  $('local').value=''; $('remote').value='';
+  $('chat').innerHTML='';
+  enableChat(false);
+  pill($('pcState'),'idle'); pill($('iceState'),'idle'); pill($('dcState'),'idle');
+  setStatus('reset');
+}
+
+/* ---------- wire up ---------- */
+roleInputs.forEach(r=&gt;r.addEventListener('change',()=&gt;{ role=r.value; resetAll(); setupPC(); }));
+$('btnCreate').onclick=createLocal;
+$('btnSetRemote').onclick=setRemote;
+$('btnCopy').onclick=async()=&gt;{ 
+  const t=$('local').value.trim(); if(!t){ setStatus('Nothing to copy','#ffe57d'); return; }
+  try{ await navigator.clipboard.writeText(t); setStatus('Copied Base64 ✓','#7dff8b'); }catch{ setStatus('Copy failed','#ff7d7d'); }
+};
+$('btnReset').onclick=resetAll;
+$('send').onclick=send;
+$('msg').addEventListener('keydown',e=&gt;{ if(e.key==='Enter'){ e.preventDefault(); send(); }});
+
+/* ---------- init ---------- */
+setupPC();
+enableChat(false);
+
+// tip on file:// vs localhost
+if (location.protocol === 'file:') {
+  setStatus('Tip: use http://localhost or HTTPS (WebRTC may be restricted on file://)', '#ffe57d');
+}
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<p>
+  AIMless is a tiny peer to peer chat that fits in a single file. It is just index.html. Open it from your filesystem and it works. Two browsers copy and paste a Base64 session blob, then WebRTC opens an end to end encrypted data channel with no server in the middle. The whole thing is roughly 300 lines and about 10 KB of JavaScript, no build and no npm. Test it by yourself, test it with a friend, test it with me, test it locally, test it online, put it on a USB stick. It just works.
+</p>
+
+<h2>The future that is already here</h2>
+<p>
+In the next wave, the successful apps will be browser native for a boring reason: economics. When the platform gives you secure networking, local storage, and accelerated compute, the server becomes an optional add on instead of a constant dependency. That means fewer moving parts, fewer breach surfaces, fewer bills, and more trust because user data stays with the user.
+</p>
+<h2>Vision</h2>
+<ul>
+  <li>Create software that boots from a single file and grows by composition, not by permission.</li>
+  <li>Make peer to peer the default path, with encryption that is on by design and not a checkbox.</li>
+  <li>Keep data local first, sync only when there is a reason, and let users carry their keys.</li>
+  <li>Turn spare browser time into shared compute, and turn shared compute into shared value.</li>
+  <li>Replace accounts with keys, replace backends with protocols, replace lock in with files.</li>
+</ul>
+<p>
+If we do this well, the next wave of apps will cost almost nothing to run, will fail less often, and will treat users as peers rather than rows in a database.
+</p>
+
+
+<hr>
+
+</body>
+</html>
