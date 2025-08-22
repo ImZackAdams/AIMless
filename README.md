@@ -80,7 +80,7 @@ When all three pills turn green, you've achieved P2P. Your ISP is confused. Your
 ## 🏗️ Architecture (lmao)
 
 ```
-index.html (5KB of nightmares)
+index.html (10KB of nightmares)
 ├── CSS (dark mode because we code at 3am)
 ├── HTML (two divs and a dream)
 └── JavaScript (where the magic/curse happens)
@@ -221,7 +221,7 @@ Do whatever you want with this cursed code. Email it. Print it. Fax it. Deploy i
 
 <p align="center">
   <sub>A project that shouldn't exist, but does</sub><br>
-  <sub>5KB of bad decisions</sub><br>
+  <sub>10KB of bad decisions</sub><br>
   <sub>🔥 This is fine 🔥</sub>
 </p>
 
