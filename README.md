@@ -157,7 +157,7 @@ const database = []; // That's it. That's the database.
 - ✅ **No cookies** (we're not monsters)
 - ✅ **No tracking** (we literally don't care)
 - ✅ **No server logs** (what server?)
-- ⚠️ **No authentication** (your friend might be three kids in a trenchcoat)
+- ⚠️ **No authentication** (your friend might be three squirrels in a trenchcoat)
 - ⚠️ **Blob contains your IP** (share wisely, or don't, we're not your mom)
 
 ---
