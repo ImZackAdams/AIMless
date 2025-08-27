@@ -3,88 +3,225 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>AIMless • P2P Chat (single file)</title>
+<title>AIMless • Old‑School AIM Skin (single file)</title>
 <style>
-  :root { --bg:#0b0b0f; --panel:#16161d; --ink:#eaeaf2; --muted:#a7a7b3; --accent:#9b5cff; --accent2:#b47dff; }
+  /* ---------------------------
+     🎛️ Old‑School AIM Skin
+     --------------------------- */
+  :root{
+    /* Win98/AIM-ish palette */
+    --win-bg:#cfcfd4;          /* app chrome */
+    --win-panel:#ececf1;       /* panel face */
+    --win-edge:#ffffff;        /* top/left light edge */
+    --win-shadow:#9b9ca3;      /* bottom/right dark edge */
+    --title-start:#2a63b7;     /* blue titlebar gradient start */
+    --title-end:#144a95;       /* blue titlebar gradient end */
+    --ink:#0b0b0f;             /* primary text */
+    --muted:#3b3b45;           /* secondary text */
+    --accent:#ffdb00;          /* AIM yellow */
+    --online:#1db954;          /* online green dot */
+    --away:#f59e0b;            /* away amber */
+    --danger:#e11d48;          /* red */
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:radial-gradient(1200px 600px at 10% 0%, #141421 0%, var(--bg) 60%);color:var(--ink);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:18px;display:flex;justify-content:center}
-  .wrap{width:100%;max-width:1000px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .card{background:var(--panel);border:1px solid #222231;border-radius:14px;padding:14px}
-  h1{margin:0 0 8px;font-size:18px}
-  h2{margin:0 0 10px;font-size:15px;color:var(--muted)}
-  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .btn{background:var(--accent);color:#0b0b0f;border:0;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
-  .btn:hover{background:var(--accent2)}
-  .btn.secondary{background:#2a2a38;color:var(--ink);border:1px solid #333349}
-  .btn.danger{background:#ff5757;color:#0b0b0f}
-  textarea,input{width:100%;background:#0f0f16;color:var(--ink);border:1px solid #282838;border-radius:8px;padding:10px}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-  .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#24243a;color:var(--ink);font-size:12px}
-  .ok{background:#1d3d23;color:#7dff8b}.warn{background:#3d3d1d;color:#ffe57d}.bad{background:#3d1d1d;color:#ff7d7d}
-  .chat{height:320px;overflow:auto;border:1px solid #242436;border-radius:10px;background:#0f0f16;padding:10px}
-  .msg{margin:6px 0}
-  .me .bubble{background:#7b61ff;color:#fff}
-  .peer .bubble{background:#202437}
-  .bubble{display:inline-block;padding:8px 12px;border-radius:14px;max-width:70%;word-wrap:break-word}
-  .status{margin-top:8px}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--win-bg);
+    font:13px/1.4 Tahoma, Verdana, Segoe UI, sans-serif;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    padding:10px;
+  }
+
+  /* Window chrome */
+  .window{
+    width:100%;
+    max-width:980px;
+    background:var(--win-panel);
+    border:1px solid var(--win-shadow);
+    box-shadow:0 0 0 1px var(--win-edge) inset;
+  }
+  .titlebar{
+    display:flex;align-items:center;gap:8px;
+    padding:6px 8px;
+    color:#fff;
+    background:linear-gradient(180deg,var(--title-start),var(--title-end));
+    border-bottom:1px solid #0f336d;
+    user-select:none;
+  }
+  .titlebar .icon{width:16px;height:16px;flex:0 0 16px}
+  .titlebar .title{font-weight:700;letter-spacing:.2px}
+  .titlebar .spacer{flex:1}
+  .titlebar .winbtns{display:flex;gap:4px}
+  .winbtn{width:16px;height:16px;background:#c0c0c0;border:1px solid #6e6e6e;box-shadow:0 0 0 1px #fff inset;display:grid;place-items:center;cursor:pointer}
+
+  /* Layout: Buddy list left, chat right */
+  .content{display:grid;grid-template-columns:260px 1fr;gap:0}
+  .pane{border-right:1px solid var(--win-shadow)}
+  .pane:last-child{border-right:none}
+
+  .section{padding:10px;border-bottom:1px solid var(--win-shadow);background:var(--win-panel)}
+  .label{font-weight:700;color:#1a1a24;margin-bottom:6px}
+
+  /* Buddy List */
+  .buddy-search{display:flex;gap:6px}
+  input[type="text"], textarea{width:100%;background:#fff;border:1px solid #9b9ca3;box-shadow:0 0 0 1px #fff inset;padding:6px;border-radius:0;font:13px Tahoma, Verdana, sans-serif;color:var(--ink)}
+  textarea{resize:vertical}
+
+  .buddies{max-height:220px;overflow:auto;background:#fff;border:1px solid #9b9ca3;box-shadow:0 0 0 1px #fff inset;padding:6px}
+  .buddy{display:flex;align-items:center;gap:8px;padding:4px;cursor:default;border-radius:2px}
+  .buddy:hover{background:#e9eef9}
+  .dot{width:8px;height:8px;border-radius:50%}
+  .dot.online{background:var(--online);box-shadow:0 0 0 1px #0d5b2a}
+  .dot.away{background:var(--away);box-shadow:0 0 0 1px #7a4c05}
+  .sn{font-weight:700}
+
+  /* Connection / Sign-On box */
+  .signon{background:#fff;border:1px solid #9b9ca3;box-shadow:0 0 0 1px #fff inset;padding:8px}
+  .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .rb{display:flex;gap:8px;align-items:center}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;background:#e6e6eb;color:#333;border:1px solid #c6c6cc;font-size:12px}
+  .pill.ok{background:#daf5e6;border-color:#b7e5c8}
+  .pill.warn{background:#fff6d8;border-color:#ffe9a8}
+  .pill.bad{background:#fde2e2;border-color:#f7b4b4}
+
+  .btn{background:#e1e1e6;border:1px solid #8a8a95;box-shadow:0 0 0 1px #fff inset;padding:6px 10px;border-radius:2px;cursor:pointer;font-weight:700}
+  .btn:active{box-shadow:0 0 0 1px #dcdce2 inset}
+  .btn.primary{background:var(--accent);border-color:#a88c00}
+  .btn.danger{background:#ffd5d9;border-color:#a33b52}
+
+  /* Chat area */
+  .chat-wrap{display:grid;grid-template-rows:auto 1fr auto}
+  .header{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--win-shadow)}
+  .screenname{font-weight:700}
+
+  .chatbox{background:#fff;border:1px solid #9b9ca3;box-shadow:0 0 0 1px #fff inset;height:360px;overflow:auto;padding:8px;font:13px/1.5 "MS Sans Serif", Tahoma, Verdana, sans-serif}
+  .line{margin:2px 0;white-space:pre-wrap}
+  .time{color:#6b7280}
+  .me .text{color:#003399}
+  .peer .text{color:#000}
+
+  .inputbar{display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:8px}
+
+  /* Hidden advanced box for the Base64 blobs */
+  details.config{margin-top:8px}
+  details.config > summary{cursor:pointer;font-weight:700}
+  .status{margin-left:6px;color:#555}
+
+  /* Little AIM running man (inline SVG) */
+  .run svg{display:block}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <!-- Signaling -->
-  <div class="card">
-    <h1>🗨️ AIMless — P2P Chat</h1>
-    <h2>1) Role</h2>
-    <div class="row">
-      <label><input type="radio" name="role" value="host" checked> Host</label>
-      <label><input type="radio" name="role" value="peer"> Peer</label>
-      <span id="pcState" class="pill">idle</span>
-      <span id="iceState" class="pill">idle</span>
-      <span id="dcState" class="pill">idle</span>
+  <div class="window" role="application" aria-label="AIMless – Old‑School AIM Skin">
+    <div class="titlebar">
+      <span class="icon run" aria-hidden="true">
+        <!-- Simple AIM-inspired running man -->
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="5" r="3" fill="#ffdb00" stroke="#000" stroke-width=".6"/>
+          <path d="M7 20l3-6 3 2 2 4" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+          <path d="M9 12l4-4 4 2" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <div class="title">AIMless – Instant Messenger</div>
+      <div class="spacer"></div>
+      <div class="winbtns" aria-hidden="true">
+        <div class="winbtn" title="Minimize">–</div>
+        <div class="winbtn" title="Maximize">▢</div>
+        <div class="winbtn" title="Close">×</div>
+      </div>
     </div>
 
-    <h2>2) Signaling (copy/paste blob)</h2>
-    <div class="row">
-      <button id="btnCreate" class="btn">Create Offer/Answer</button>
-      <button id="btnCopy" class="btn secondary">📋 Copy</button>
-      <button id="btnReset" class="btn danger">Reset</button>
-    </div>
+    <div class="content">
+      <!-- Left: Buddy + Sign-On -->
+      <aside class="pane" aria-label="Buddy List & Sign-On">
+        <div class="section">
+          <div class="label">Buddy List</div>
+          <div class="buddy-search"><input id="search" type="text" placeholder="Find a buddy…"></div>
+          <div id="buddies" class="buddies" aria-live="polite">
+            <!-- Filled client-side with a single pseudo-buddy 'Peer' to match P2P model -->
+          </div>
+        </div>
 
-    <label class="mono" style="margin-top:8px">Your description (Base64)</label>
-    <textarea id="local" rows="6" class="mono" placeholder="Your Base64 blob will appear here…" readonly></textarea>
+        <div class="section">
+          <div class="label">Sign On</div>
+          <div class="signon">
+            <div class="row rb" style="margin-bottom:6px">
+              <label><input type="radio" name="role" value="host" checked> Host</label>
+              <label><input type="radio" name="role" value="peer"> Peer</label>
+              <span id="pcState" class="pill">idle</span>
+              <span id="iceState" class="pill">idle</span>
+              <span id="dcState" class="pill">idle</span>
+            </div>
+            <div class="row" style="margin-bottom:6px">
+              <button id="btnCreate" class="btn primary">Sign On / Create</button>
+              <button id="btnCopy" class="btn">Copy My Blob</button>
+              <button id="btnReset" class="btn danger">Reset</button>
+              <span id="status" class="status" aria-live="polite"></span>
+            </div>
 
-    <label class="mono" style="margin-top:8px">Peer description (Base64 / JSON / raw SDP)</label>
-    <textarea id="remote" rows="6" class="mono" placeholder="Paste the other side’s blob here…"></textarea>
-    <div class="row" style="margin-top:8px">
-      <button id="btnSetRemote" class="btn">Set Remote</button>
-      <span id="status" class="status"></span>
+            <details class="config">
+              <summary>Advanced connection info</summary>
+              <div style="margin:6px 0">
+                <div class="label" style="font-weight:600">Your description (Base64)</div>
+                <textarea id="local" rows="5" class="mono" placeholder="Your Base64 blob will appear here…" readonly></textarea>
+              </div>
+              <div style="margin:6px 0">
+                <div class="label" style="font-weight:600">Peer description (Base64 / JSON / raw SDP)</div>
+                <textarea id="remote" rows="5" class="mono" placeholder="Paste the other side’s blob here…"></textarea>
+              </div>
+              <div class="row" style="margin-top:4px">
+                <button id="btnSetRemote" class="btn">Set Remote</button>
+              </div>
+            </details>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right: Chat window -->
+      <main class="chat-wrap" aria-label="Chat">
+        <div class="header">
+          <span class="icon run" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="5" r="3" fill="#ffdb00" stroke="#000" stroke-width=".6"/>
+              <path d="M7 20l3-6 3 2 2 4" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+              <path d="M9 12l4-4 4 2" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <div class="screenname">Instant Message with <span id="peerName">Peer</span></div>
+          <span class="pill" id="presence"><span class="dot online" style="display:inline-block;vertical-align:middle;margin-right:6px"></span> Online</span>
+        </div>
+
+        <div id="chat" class="chatbox" aria-live="polite" aria-label="Conversation log"></div>
+
+        <div class="section" style="border-bottom:none">
+          <div class="label">Your Screen Name</div>
+          <input id="name" type="text" placeholder="e.g. nyxmesh_h4x0r"/>
+        </div>
+
+        <div class="section" style="border-bottom:none">
+          <div class="inputbar">
+            <input id="msg" type="text" placeholder="Type a message…" disabled />
+            <button id="send" class="btn primary" disabled>Send</button>
+          </div>
+        </div>
+      </main>
     </div>
   </div>
-
-  <!-- Chat -->
-  <div class="card">
-    <h2>3) Chat</h2>
-    <div class="row">
-      <input id="name" placeholder="Your name (optional)">
-    </div>
-    <div id="chat" class="chat"></div>
-    <div class="row" style="margin-top:8px">
-      <input id="msg" placeholder="Type a message…" disabled>
-      <button id="send" class="btn" disabled>Send</button>
-    </div>
-  </div>
-</div>
 
 <script>
-/* ---------- shorthands ---------- */
+/* ---------------------------
+   Core behavior (from original)
+   with visual tweaks for AIM skin
+---------------------------- */
 const $ = id => document.getElementById(id);
 const roleInputs = document.querySelectorAll('input[name="role"]');
 
-/* ---------- state ---------- */
 let role = 'host';
 let pc, dc;
 
-/* ---------- config ---------- */
 const rtcConfig = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
@@ -93,19 +230,22 @@ const rtcConfig = {
   iceCandidatePoolSize: 10
 };
 
-/* ---------- ui helpers ---------- */
 function pill(el, text, cls=""){ el.textContent=text; el.className="pill "+cls; }
-function setStatus(t,c){ $('status').textContent=t; $('status').style.color=c||""; }
-function addMsg(name, text, mine=false){
-  const div=document.createElement('div'); div.className='msg '+(mine?'me':'peer');
-  const b=document.createElement('div'); b.className='bubble'; b.textContent=(name?name+': ':'')+text;
-  div.appendChild(b); $('chat').appendChild(div); $('chat').scrollTop=$('chat').scrollHeight;
+function setStatus(t,c){ const el=$('status'); el.textContent=t; el.style.color=c||""; }
+
+function addLine(name, text, mine=false){
+  const row = document.createElement('div');
+  row.className = 'line ' + (mine? 'me' : 'peer');
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  row.innerHTML = `<span class="time">(${time})</span> <span class="sn">${name?escapeHtml(name): (mine? 'Me':'Peer')}</span>: <span class="text">${escapeHtml(text)}</span>`;
+  $('chat').appendChild(row);
+  $('chat').scrollTop = $('chat').scrollHeight;
 }
+
 function enableChat(on){ $('msg').disabled=!on; $('send').disabled=!on; }
 
-/* ---------- robust blob handling ---------- */
+/* ---------- blob helpers ---------- */
 function pack(desc) {
-  // RTCSessionDescriptionInit -> Base64
   const json = JSON.stringify(desc);
   return btoa(unescape(encodeURIComponent(json)));
 }
@@ -124,7 +264,7 @@ function setupPC(){
   pc.onconnectionstatechange = () => {
     const s = pc.connectionState;
     pill($('pcState'), s, s==='connected'?'ok':(s==='failed'||s==='closed'?'bad':'warn'));
-    if (s==='connected' || s==='completed') { enableChat(true); setStatus('PC connected ✓','#7dff8b'); }
+    if (s==='connected' || s==='completed') { enableChat(true); setStatus('Connected ✓','#135c2f'); }
     if (s==='disconnected'||s==='failed'||s==='closed') enableChat(false);
   };
 
@@ -133,7 +273,6 @@ function setupPC(){
     pill($('iceState'), s, (s==='connected'||s==='completed')?'ok':(s==='failed'?'bad':'warn'));
   };
 
-  // Non-trickle-ish: dump Base64 localDescription after candidates settle briefly
   let gatherTimer=null;
   pc.onicecandidate = () => {
     if (gatherTimer) clearTimeout(gatherTimer);
@@ -157,32 +296,31 @@ function wireDC(channel){
     pill($('dcState'),'open','ok');
     enableChat(true);
     $('msg').focus();
-    setStatus('DataChannel open ✓','#7dff8b');
+    setStatus('DataChannel open ✓','#135c2f');
   };
 
   channel.onclose = ()=>{
     pill($('dcState'),'closed','bad');
     enableChat(false);
-    setStatus('Disconnected','#ff7d7d');
+    setStatus('Disconnected','#7a1a1a');
   };
 
   channel.onerror = (e)=>{
     pill($('dcState'),'error','bad');
-    setStatus('DC error','orange');
+    setStatus('DC error','#7a5a00');
     console.error('DataChannel error:', e);
   };
 
   channel.onmessage = (ev)=>{
     try{
       const {name,text}=JSON.parse(ev.data);
-      addMsg(name||'Peer', text, false);
+      addLine(name||'Peer', text, false);
     }catch{
-      addMsg('Peer', String(ev.data), false);
+      addLine('Peer', String(ev.data), false);
     }
   };
 }
 
-/* ---------- actions ---------- */
 async function createLocal(){
   if(!pc) setupPC();
   if(role==='host'){
@@ -190,7 +328,7 @@ async function createLocal(){
     await pc.setLocalDescription(offer);
     setStatus('Gathering ICE for offer…');
   } else {
-    if (!pc.remoteDescription){ setStatus('Set remote offer first', '#ffe57d'); return; }
+    if (!pc.remoteDescription){ setStatus('Set remote offer first', '#7a5a00'); return; }
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
     setStatus('Gathering ICE for answer…');
@@ -200,17 +338,14 @@ async function createLocal(){
 async function setRemote(){
   try{
     const raw = $('remote').value.trim();
-    if (!raw) { setStatus('Paste peer blob first', '#ffe57d'); return; }
+    if (!raw) { setStatus('Paste peer blob first', '#7a5a00'); return; }
 
     let desc;
     if (looksLikeJson(raw)) {
-      // Proper JSON (sdp should include \r\n escapes)
       desc = JSON.parse(raw);
     } else if (/^[A-Za-z0-9+/=\s]+$/.test(raw) && !looksLikeSdp(raw)) {
-      // Base64 (preferred)
       desc = unpackBase64(raw.replace(/\s+/g,''));
     } else if (looksLikeSdp(raw)) {
-      // Raw SDP text pasted directly from some apps
       desc = { type: (role === 'host' ? 'answer' : 'offer'), sdp: raw };
     } else {
       throw new Error('Unrecognized blob format');
@@ -221,7 +356,7 @@ async function setRemote(){
     setStatus(`Remote ${desc.type} set`);
   }catch(e){
     console.error(e);
-    setStatus('Invalid blob (try Base64 or raw SDP)', '#ff7d7d');
+    setStatus('Invalid blob (try Base64 or raw SDP)', '#7a1a1a');
   }
 }
 
@@ -229,12 +364,12 @@ function send(){
   const text = $('msg').value.trim();
   if(!text) return;
   if(!dc || dc.readyState!=='open'){
-    setStatus('Not connected (DC not open)', '#ffe57d');
+    setStatus('Not connected (DC not open)', '#7a5a00');
     return;
   }
   const name = $('name').value.trim();
   dc.send(JSON.stringify({name, text}));
-  addMsg(name||'Me', text, true);
+  addLine(name||'Me', text, true);
   $('msg').value='';
 }
 
@@ -248,25 +383,37 @@ function resetAll(){
   setStatus('reset');
 }
 
-/* ---------- wire up ---------- */
 roleInputs.forEach(r=>r.addEventListener('change',()=>{ role=r.value; resetAll(); setupPC(); }));
 $('btnCreate').onclick=createLocal;
 $('btnSetRemote').onclick=setRemote;
 $('btnCopy').onclick=async()=>{ 
-  const t=$('local').value.trim(); if(!t){ setStatus('Nothing to copy','#ffe57d'); return; }
-  try{ await navigator.clipboard.writeText(t); setStatus('Copied Base64 ✓','#7dff8b'); }catch{ setStatus('Copy failed','#ff7d7d'); }
+  const t=$('local').value.trim(); if(!t){ setStatus('Nothing to copy','#7a5a00'); return; }
+  try{ await navigator.clipboard.writeText(t); setStatus('Copied Base64 ✓','#135c2f'); }catch{ setStatus('Copy failed','#7a1a1a'); }
 };
 $('btnReset').onclick=resetAll;
 $('send').onclick=send;
 $('msg').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); send(); }});
 
-/* ---------- init ---------- */
+/* Setup buddy list (pseudo-buddy to fit P2P model) */
+(function initBuddies(){
+  const list = $('buddies');
+  list.innerHTML = '';
+  const el = document.createElement('div');
+  el.className='buddy';
+  el.innerHTML = '<span class="dot online"></span><span class="sn">Peer</span><span style="margin-left:auto;color:#666">available</span>';
+  list.appendChild(el);
+})();
+
+/* Utilities */
+function escapeHtml(s){
+  return s.replace(/[&<>\"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
+}
+
+/* init */
 setupPC();
 enableChat(false);
-
-// tip on file:// vs localhost
 if (location.protocol === 'file:') {
-  setStatus('Tip: use http://localhost or HTTPS (WebRTC may be restricted on file://)', '#ffe57d');
+  setStatus('Tip: use http://localhost or HTTPS (WebRTC may be restricted on file://)', '#7a5a00');
 }
 </script>
 </body>
