@@ -281,10 +281,12 @@
 
   .chat-empty { display: grid; height: 100%; min-height: 280px; place-items: center; color: #777; text-align: center; }
   .chat-empty strong { display: block; margin-bottom: 3px; color: var(--title); }
-  .msg { margin: 0 0 9px; overflow-wrap: anywhere; }
-  .bubble { display: block; max-width: 100%; }
-  .me .bubble { color: #000080; }
-  .peer .bubble { color: #800000; }
+  .msg { margin: 0 0 11px; overflow-wrap: anywhere; }
+  .msg-head { margin-bottom: 1px; font-size: 12px; font-weight: 700; }
+  .me .msg-head { color: #000080; }
+  .peer .msg-head { color: #800000; }
+  .msg-time { color: #666; font-size: 10px; font-weight: 400; }
+  .bubble { display: block; max-width: 100%; padding-left: 10px; color: #000; white-space: pre-wrap; }
   .composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; align-items: stretch; }
   .composer #msg { min-height: 54px; }
   .composer .btn { min-width: 72px; }
@@ -324,7 +326,7 @@
   <header class="app-banner">
     <span class="app-mark" aria-hidden="true">A</span>
     <div><strong>AIMless</strong><span class="tagline"> - direct chat, no screen name required</span></div>
-    <span class="banner-state">Private peer-to-peer session</span>
+    <span id="sessionState" class="banner-state" aria-live="polite">Hosting a private session</span>
   </header>
 
   <main class="workspace">
@@ -338,7 +340,7 @@
       <div class="window-body">
         <div class="welcome-strip">
           <span class="buddy-mark" aria-hidden="true">A!</span>
-          <div><strong>Welcome to AIMless</strong><small>Choose a side, then exchange connection info.</small></div>
+          <div><strong>Welcome to AIMless</strong><small>Direct buddy-to-buddy messaging.</small></div>
         </div>
 
         <fieldset class="group-box">
@@ -374,7 +376,7 @@
           <div class="signal-field">
             <label class="field-label" for="local">Your connection info</label>
             <textarea id="local" rows="5" class="mono" placeholder="Your Base64 connection info will appear here..." readonly></textarea>
-            <div class="field-note">Send this private code directly to your buddy.</div>
+            <div class="field-note">Private connection code</div>
           </div>
           <div class="signal-field">
             <label class="field-label" for="remote">Buddy's connection info</label>
@@ -400,7 +402,7 @@
           <input id="name" type="text" autocomplete="nickname" placeholder="Me (optional)">
         </div>
         <div id="chat" class="chat" role="log" aria-live="polite" aria-label="Message transcript">
-          <div class="chat-empty"><div><strong>No messages yet</strong>Connect to a buddy to begin chatting.</div></div>
+          <div class="chat-empty"><div><strong>No messages yet</strong>Waiting for your first message.</div></div>
         </div>
         <div class="composer">
           <label class="sr-only" for="msg">Message</label>
@@ -438,7 +440,7 @@ function setStatus(text, color) {
 }
 
 function emptyChat() {
-  $('chat').innerHTML = '<div class="chat-empty"><div><strong>No messages yet</strong>Connect to a buddy to begin chatting.</div></div>';
+  $('chat').innerHTML = '<div class="chat-empty"><div><strong>No messages yet</strong>Waiting for your first message.</div></div>';
 }
 
 function addMsg(name, text, mine = false) {
@@ -446,9 +448,20 @@ function addMsg(name, text, mine = false) {
   if (empty) empty.remove();
   const div = document.createElement('div');
   div.className = 'msg ' + (mine ? 'me' : 'peer');
+
+  const head = document.createElement('div');
+  head.className = 'msg-head';
+  const speaker = document.createElement('span');
+  speaker.textContent = name || (mine ? 'Me' : 'Peer');
+  const time = document.createElement('span');
+  time.className = 'msg-time';
+  time.textContent = ` (${new Intl.DateTimeFormat([], { hour: 'numeric', minute: '2-digit' }).format(new Date())}):`;
+
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
-  bubble.textContent = (name ? name + ': ' : '') + text;
+  bubble.textContent = text;
+  head.append(speaker, time);
+  div.appendChild(head);
   div.appendChild(bubble);
   $('chat').appendChild(div);
   $('chat').scrollTop = $('chat').scrollHeight;
@@ -457,6 +470,13 @@ function addMsg(name, text, mine = false) {
 function enableChat(on) {
   $('msg').disabled = !on;
   $('send').disabled = !on;
+}
+
+function updateRoleUI() {
+  const isHost = role === 'host';
+  $('btnCreate').textContent = isHost ? 'Create Offer' : 'Create Answer';
+  $('btnSetRemote').textContent = isHost ? 'Set Buddy Answer' : 'Set Host Offer';
+  $('sessionState').textContent = isHost ? 'Hosting a private session' : 'Joining a private session';
 }
 
 function pack(desc) {
@@ -477,35 +497,39 @@ function setupPC() {
     try { pc.close(); } catch {}
   }
   pc = new RTCPeerConnection(rtcConfig);
+  const connection = pc;
 
-  pc.onconnectionstatechange = () => {
-    const state = pc.connectionState;
+  connection.onconnectionstatechange = () => {
+    if (pc !== connection) return;
+    const state = connection.connectionState;
     pill($('pcState'), state, state === 'connected' ? 'ok' : (state === 'failed' || state === 'closed' ? 'bad' : 'warn'));
     if (state === 'connected' || state === 'completed') {
-      enableChat(true);
       setStatus('PC connected', '#008000');
     }
     if (state === 'disconnected' || state === 'failed' || state === 'closed') enableChat(false);
   };
 
-  pc.oniceconnectionstatechange = () => {
-    const state = pc.iceConnectionState;
+  connection.oniceconnectionstatechange = () => {
+    if (pc !== connection) return;
+    const state = connection.iceConnectionState;
     pill($('iceState'), state, (state === 'connected' || state === 'completed') ? 'ok' : (state === 'failed' ? 'bad' : 'warn'));
   };
 
   let gatherTimer = null;
-  pc.onicecandidate = () => {
+  connection.onicecandidate = () => {
     if (gatherTimer) clearTimeout(gatherTimer);
     gatherTimer = setTimeout(() => {
-      if (pc.localDescription) $('local').value = pack(pc.localDescription);
+      if (pc !== connection || !connection.localDescription) return;
+      $('local').value = pack(connection.localDescription);
+      setStatus(`${connection.localDescription.type === 'offer' ? 'Offer' : 'Answer'} ready to copy`, '#008000');
     }, 300);
   };
 
   if (role === 'host') {
-    dc = pc.createDataChannel('chat', { ordered: true });
+    dc = connection.createDataChannel('chat', { ordered: true });
     wireDC(dc);
   } else {
-    pc.ondatachannel = event => {
+    connection.ondatachannel = event => {
       dc = event.channel;
       wireDC(dc);
     };
@@ -545,19 +569,25 @@ function wireDC(channel) {
 }
 
 async function createLocal() {
-  if (!pc) setupPC();
-  if (role === 'host') {
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    setStatus('Gathering network routes for offer...');
-  } else {
-    if (!pc.remoteDescription) {
-      setStatus('Set the host connection info first', '#a65f00');
-      return;
+  try {
+    if (!pc) setupPC();
+    if (role === 'host') {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      setStatus('Gathering network routes for offer...');
+    } else {
+      if (!pc.remoteDescription) {
+        setStatus('Set the host connection info first', '#a65f00');
+        $('remote').focus();
+        return;
+      }
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      setStatus('Gathering network routes for answer...');
     }
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    setStatus('Gathering network routes for answer...');
+  } catch (error) {
+    console.error(error);
+    setStatus('Could not create connection info', '#a00000');
   }
 }
 
@@ -583,6 +613,7 @@ async function setRemote() {
     if (!pc) setupPC();
     await pc.setRemoteDescription(desc);
     setStatus(`Remote ${desc.type} set`);
+    if (role === 'peer' && desc.type === 'offer') $('btnCreate').focus();
   } catch (error) {
     console.error(error);
     setStatus('Invalid connection info (try Base64 or raw SDP)', '#a00000');
@@ -603,7 +634,12 @@ function send() {
 }
 
 function resetAll() {
-  try { if (dc) dc.close(); } catch {}
+  try {
+    if (dc) {
+      dc.onclose = null;
+      dc.close();
+    }
+  } catch {}
   try { if (pc) pc.close(); } catch {}
   pc = null;
   dc = null;
@@ -621,6 +657,7 @@ roleInputs.forEach(input => input.addEventListener('change', () => {
   role = input.value;
   resetAll();
   setupPC();
+  updateRoleUI();
 }));
 
 $('btnCreate').onclick = createLocal;
@@ -632,10 +669,15 @@ $('btnCopy').onclick = async () => {
     return;
   }
   try {
+    if (!navigator.clipboard) throw new Error('Clipboard API unavailable');
     await navigator.clipboard.writeText(text);
     setStatus('Connection info copied', '#008000');
   } catch {
-    setStatus('Copy failed', '#a00000');
+    $('local').select();
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch {}
+    window.getSelection()?.removeAllRanges();
+    setStatus(copied ? 'Connection info copied' : 'Copy failed - select the text manually', copied ? '#008000' : '#a00000');
   }
 };
 $('btnReset').onclick = resetAll;
@@ -649,6 +691,7 @@ $('msg').addEventListener('keydown', event => {
 
 setupPC();
 enableChat(false);
+updateRoleUI();
 
 if (location.protocol === 'file:') {
   setStatus('Tip: use localhost or HTTPS if WebRTC is restricted on file://', '#a65f00');
