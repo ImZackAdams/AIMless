@@ -1,105 +1,424 @@
-
+<!doctype html>
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>AIMless • Nyx-Style P2P Chat (single file)</title>
+<meta name="theme-color" content="#008080" />
+<title>AIMless - Direct P2P Chat</title>
 <style>
-  :root { --bg:#0b0b0f; --panel:#16161d; --ink:#eaeaf2; --muted:#a7a7b3; --accent:#9b5cff; --accent2:#b47dff; }
-  *{box-sizing:border-box}
-  body{margin:0;background:radial-gradient(1200px 600px at 10% 0%, #141421 0%, var(--bg) 60%);color:var(--ink);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:18px;display:flex;justify-content:center}
-  .wrap{width:100%;max-width:1000px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .card{background:var(--panel);border:1px solid #222231;border-radius:14px;padding:14px}
-  h1{margin:0 0 8px;font-size:18px}
-  h2{margin:0 0 10px;font-size:15px;color:var(--muted)}
-  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .btn{background:var(--accent);color:#0b0b0f;border:0;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
-  .btn:hover{background:var(--accent2)}
-  .btn.secondary{background:#2a2a38;color:var(--ink);border:1px solid #333349}
-  .btn.danger{background:#ff5757;color:#0b0b0f}
-  textarea,input{width:100%;background:#0f0f16;color:var(--ink);border:1px solid #282838;border-radius:8px;padding:10px}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-  .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#24243a;color:var(--ink);font-size:12px}
-  .ok{background:#1d3d23;color:#7dff8b}.warn{background:#3d3d1d;color:#ffe57d}.bad{background:#3d1d1d;color:#ff7d7d}
-  .chat{height:320px;overflow:auto;border:1px solid #242436;border-radius:10px;background:#0f0f16;padding:10px}
-  .msg{margin:6px 0}
-  .me .bubble{background:#7b61ff;color:#fff}
-  .peer .bubble{background:#202437}
-  .bubble{display:inline-block;padding:8px 12px;border-radius:14px;max-width:70%;word-wrap:break-word}
-  .status{margin-top:8px}
+  :root {
+    --desktop: #008080;
+    --chrome: #c0c0c0;
+    --light: #fff;
+    --mid: #dfdfdf;
+    --dark: #808080;
+    --shadow: #000;
+    --title: #000080;
+    --title-bright: #1084d0;
+    --online: #008000;
+    --waiting: #a65f00;
+    --offline: #a00000;
+  }
+
+  * { box-sizing: border-box; }
+  html { min-width: 320px; }
+  body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 24px;
+    color: #000;
+    background-color: var(--desktop);
+    background-image:
+      linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+    background-size: 4px 4px;
+    font: 12px/1.35 Tahoma, Verdana, Arial, sans-serif;
+  }
+
+  button, input, textarea { font: inherit; }
+  button, input, textarea, fieldset { min-width: 0; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible {
+    outline: 1px dotted #000;
+    outline-offset: -4px;
+  }
+
+  .desktop { width: min(1120px, 100%); margin: 0 auto; }
+  .app-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    margin-bottom: 10px;
+    padding: 4px 7px;
+    border: 2px solid;
+    border-color: var(--light) var(--shadow) var(--shadow) var(--light);
+    background: var(--chrome);
+    box-shadow: 1px 1px 0 rgba(0,0,0,.35);
+  }
+
+  .app-mark {
+    position: relative;
+    display: grid;
+    width: 23px;
+    height: 23px;
+    flex: 0 0 23px;
+    place-items: center;
+    border: 1px solid #000;
+    background: #ffe100;
+    color: #111;
+    font: bold 17px/1 Arial, sans-serif;
+    transform: skew(-7deg);
+  }
+
+  .app-mark::after {
+    content: "";
+    position: absolute;
+    right: -4px;
+    bottom: -3px;
+    width: 8px;
+    height: 3px;
+    border: 1px solid #000;
+    background: #e63b19;
+  }
+
+  .app-banner strong { font-size: 13px; }
+  .app-banner .tagline { color: #444; }
+  .banner-state {
+    margin-left: auto;
+    padding: 2px 6px;
+    border: 1px inset var(--light);
+    background: var(--mid);
+    white-space: nowrap;
+  }
+
+  .workspace {
+    display: grid;
+    grid-template-columns: minmax(300px, 360px) minmax(440px, 1fr);
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .window {
+    min-width: 0;
+    padding: 3px;
+    border: 2px solid;
+    border-color: var(--light) var(--shadow) var(--shadow) var(--light);
+    background: var(--chrome);
+    box-shadow: 2px 2px 0 rgba(0,0,0,.35);
+  }
+
+  .title-bar {
+    display: flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 3px 6px;
+    color: #fff;
+    background: linear-gradient(90deg, var(--title), var(--title-bright));
+    font-weight: 700;
+  }
+
+  .title-icon {
+    display: inline-block;
+    width: 15px;
+    height: 13px;
+    margin-right: 6px;
+    border: 1px solid #000;
+    background: #ffe100;
+    color: #000;
+    font: bold 8px/11px Arial, sans-serif;
+    text-align: center;
+  }
+
+  .title-meta { margin-left: auto; color: #e5f2ff; font-weight: 400; }
+  .menu-bar { display: flex; gap: 18px; padding: 4px 7px 5px; border-bottom: 1px solid var(--dark); }
+  .menu-bar span::first-letter { text-decoration: underline; }
+  .window-body { padding: 9px; }
+  .setup-window .window-body { display: grid; gap: 9px; }
+
+  .welcome-strip {
+    display: grid;
+    grid-template-columns: 35px 1fr;
+    gap: 9px;
+    align-items: center;
+    padding: 6px;
+    border: 1px solid;
+    border-color: var(--dark) var(--light) var(--light) var(--dark);
+    background: #fff;
+  }
+
+  .buddy-mark {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid #ad8d00;
+    background: #ffe100;
+    color: var(--title);
+    font: 900 20px/1 Arial, sans-serif;
+  }
+
+  .welcome-strip strong { display: block; color: var(--title); font-size: 13px; }
+  .welcome-strip small { color: #555; }
+  fieldset.group-box {
+    margin: 0;
+    padding: 9px;
+    border: 1px solid;
+    border-color: var(--dark) var(--light) var(--light) var(--dark);
+  }
+
+  .group-box legend { padding: 0 4px; font-weight: 700; }
+  .field-label { display: block; margin-bottom: 3px; font-weight: 700; }
+  .field-note { margin-top: 3px; color: #555; font-size: 10px; }
+  .role-options { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .role-choice {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px;
+    border: 1px solid;
+    border-color: var(--light) var(--dark) var(--dark) var(--light);
+    background: var(--mid);
+    cursor: pointer;
+  }
+
+  .role-choice:has(input:checked) { color: #fff; border-color: #000; background: var(--title); }
+  .role-choice input { width: auto; margin: 0; accent-color: var(--title); }
+  .role-choice strong, .role-choice small { display: block; }
+  .role-choice small { opacity: .8; }
+  .status-list {
+    margin: 0;
+    padding: 2px 0;
+    border: 1px solid;
+    border-color: var(--dark) var(--light) var(--light) var(--dark);
+    background: #fff;
+  }
+
+  .status-row {
+    display: grid;
+    grid-template-columns: 12px 1fr auto;
+    gap: 7px;
+    align-items: center;
+    padding: 4px 7px;
+  }
+
+  .status-row + .status-row { border-top: 1px dotted #bbb; }
+  .status-dot { width: 8px; height: 8px; border: 1px solid #777; background: #aaa; }
+  .pill { color: #555; text-transform: capitalize; }
+  .pill.ok { color: var(--online); font-weight: 700; }
+  .pill.warn { color: var(--waiting); font-weight: 700; }
+  .pill.bad { color: var(--offline); font-weight: 700; }
+  .status-row:has(.pill.ok) .status-dot { border-color: #005a00; background: #22ad22; }
+  .status-row:has(.pill.warn) .status-dot { border-color: #8d5700; background: #ffb000; }
+  .status-row:has(.pill.bad) .status-dot { border-color: #690000; background: #d92c2c; }
+  .button-row { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    min-height: 25px;
+    padding: 3px 12px;
+    border: 2px solid;
+    border-color: var(--light) var(--shadow) var(--shadow) var(--light);
+    border-radius: 0;
+    background: var(--chrome);
+    color: #000;
+    font-weight: 400;
+    cursor: pointer;
+  }
+
+  .btn:hover:not(:disabled) { background: #d4d4d4; }
+  .btn:active:not(:disabled) {
+    padding: 4px 11px 2px 13px;
+    border-color: var(--shadow) var(--light) var(--light) var(--shadow);
+  }
+  .btn.primary { font-weight: 700; }
+  .btn.danger { color: #790000; }
+  .btn:disabled { color: var(--dark); cursor: default; text-shadow: 1px 1px #fff; }
+  textarea, input[type="text"] {
+    width: 100%;
+    border: 2px solid;
+    border-color: var(--shadow) var(--light) var(--light) var(--shadow);
+    border-radius: 0;
+    background: #fff;
+    color: #000;
+    padding: 5px 6px;
+  }
+
+  textarea { min-height: 68px; resize: vertical; }
+  textarea[readonly] { background: #f3f3f3; color: #333; }
+  input:disabled { background: #eee; color: #777; }
+  .mono { font: 10px/1.35 "Courier New", Courier, monospace; }
+  .signal-field + .signal-field { margin-top: 8px; }
+  .status-bar {
+    min-height: 24px;
+    padding: 4px 6px;
+    border: 1px solid;
+    border-color: var(--dark) var(--light) var(--light) var(--dark);
+    background: var(--mid);
+    color: #333;
+  }
+
+  .status-bar::before { content: "Status: "; font-weight: 700; }
+  .chat-window { display: grid; grid-template-rows: auto auto 1fr; }
+  .chat-window .window-body { display: grid; grid-template-rows: auto minmax(320px, 1fr) auto; gap: 8px; }
+  .identity-bar {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    align-items: center;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--dark);
+  }
+
+  .identity-bar label { font-weight: 700; }
+  .chat {
+    min-height: 320px;
+    overflow: auto;
+    padding: 10px;
+    border: 2px solid;
+    border-color: var(--shadow) var(--light) var(--light) var(--shadow);
+    background: #fff;
+    color: #000;
+    font: 13px/1.45 Arial, sans-serif;
+  }
+
+  .chat-empty { display: grid; height: 100%; min-height: 280px; place-items: center; color: #777; text-align: center; }
+  .chat-empty strong { display: block; margin-bottom: 3px; color: var(--title); }
+  .msg { margin: 0 0 9px; overflow-wrap: anywhere; }
+  .bubble { display: block; max-width: 100%; }
+  .me .bubble { color: #000080; }
+  .peer .bubble { color: #800000; }
+  .composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; align-items: stretch; }
+  .composer #msg { min-height: 54px; }
+  .composer .btn { min-width: 72px; }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (max-width: 780px) {
+    body { padding: 8px; }
+    .workspace { grid-template-columns: 1fr; }
+    .chat-window .window-body { grid-template-rows: auto minmax(300px, 50vh) auto; }
+    .app-banner .tagline { display: none; }
+  }
+
+  @media (max-width: 430px) {
+    .app-banner { align-items: flex-start; }
+    .banner-state { max-width: 42%; white-space: normal; text-align: right; }
+    .role-options { grid-template-columns: 1fr; }
+    .button-row .btn { flex: 1 1 auto; }
+    .identity-bar { grid-template-columns: 1fr; gap: 3px; }
+    .composer { grid-template-columns: 1fr; }
+    .composer .btn { min-height: 31px; }
+    .title-meta { display: none; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <!-- Signaling -->
-  <div class="card">
-    <h1>🗨️ AIMless P2P Chat</h1>
-    <h2>1) Role</h2>
-    <div class="row">
-      <label><input type="radio" name="role" value="host" checked> Host</label>
-      <label><input type="radio" name="role" value="peer"> Peer</label>
-      <span id="pcState" class="pill">idle</span>
-      <span id="iceState" class="pill">idle</span>
-      <span id="dcState" class="pill">idle</span>
+<div class="desktop">
+  <header class="app-banner">
+    <span class="app-mark" aria-hidden="true">A</span>
+    <div><strong>AIMless</strong><span class="tagline"> - direct chat, no screen name required</span></div>
+    <span class="banner-state">Private peer-to-peer session</span>
+  </header>
 
+  <main class="workspace">
+    <section class="window setup-window" aria-labelledby="setupTitle">
+      <div class="title-bar">
+        <span class="title-icon" aria-hidden="true">A</span>
+        <span id="setupTitle">AIMless Connection</span>
+        <span class="title-meta">Buddy Setup</span>
+      </div>
+      <nav class="menu-bar" aria-label="Connection steps"><span>Role</span><span>Exchange</span><span>Connect</span></nav>
+      <div class="window-body">
+        <div class="welcome-strip">
+          <span class="buddy-mark" aria-hidden="true">A!</span>
+          <div><strong>Welcome to AIMless</strong><small>Choose a side, then exchange connection info.</small></div>
+        </div>
 
+        <fieldset class="group-box">
+          <legend>1. Choose your role</legend>
+          <div class="role-options">
+            <label class="role-choice">
+              <input type="radio" name="role" value="host" checked>
+              <span><strong>Host</strong><small>Starts the chat</small></span>
+            </label>
+            <label class="role-choice">
+              <input type="radio" name="role" value="peer">
+              <span><strong>Peer</strong><small>Joins the host</small></span>
+            </label>
+          </div>
+        </fieldset>
 
+        <fieldset class="group-box">
+          <legend>Connection status</legend>
+          <div class="status-list">
+            <div class="status-row"><span class="status-dot"></span><span>Peer connection</span><span id="pcState" class="pill">idle</span></div>
+            <div class="status-row"><span class="status-dot"></span><span>Network route</span><span id="iceState" class="pill">idle</span></div>
+            <div class="status-row"><span class="status-dot"></span><span>Instant message</span><span id="dcState" class="pill">idle</span></div>
+          </div>
+        </fieldset>
 
+        <fieldset class="group-box">
+          <legend>2. Exchange connection info</legend>
+          <div class="button-row">
+            <button id="btnCreate" class="btn primary" type="button">Create Offer/Answer</button>
+            <button id="btnCopy" class="btn" type="button">Copy</button>
+            <button id="btnReset" class="btn danger" type="button">Reset</button>
+          </div>
+          <div class="signal-field">
+            <label class="field-label" for="local">Your connection info</label>
+            <textarea id="local" rows="5" class="mono" placeholder="Your Base64 connection info will appear here..." readonly></textarea>
+            <div class="field-note">Send this private code directly to your buddy.</div>
+          </div>
+          <div class="signal-field">
+            <label class="field-label" for="remote">Buddy's connection info</label>
+            <textarea id="remote" rows="5" class="mono" placeholder="Paste Base64, JSON, or raw SDP here..."></textarea>
+          </div>
+          <div class="button-row"><button id="btnSetRemote" class="btn primary" type="button">Set Remote</button></div>
+        </fieldset>
 
+        <div id="status" class="status-bar" role="status" aria-live="polite">Ready</div>
+      </div>
+    </section>
 
-
-
-
-
-
-
-
-
-
-    </div>
-
-    <h2>2) Signaling (copy/paste blob)</h2>
-    <div class="row">
-      <button id="btnCreate" class="btn">Create Offer/Answer</button>
-      <button id="btnCopy" class="btn secondary">📋 Copy</button>
-      <button id="btnReset" class="btn danger">Reset</button>
-    </div>
-
-    <label class="mono" style="margin-top:8px">Your description (Base64)</label>
-    <textarea id="local" rows="6" class="mono" placeholder="Your Base64 blob will appear here…" readonly></textarea>
-
-    <label class="mono" style="margin-top:8px">Peer description (Base64 / JSON / raw SDP)</label>
-    <textarea id="remote" rows="6" class="mono" placeholder="Paste the other side’s blob here…"></textarea>
-    <div class="row" style="margin-top:8px">
-      <button id="btnSetRemote" class="btn">Set Remote</button>
-      <span id="status" class="status"></span>
-    </div>
-  </div>
-
-  <!-- Chat -->
-  <div class="card">
-    <h2>3) Chat</h2>
-    <div class="row">
-      <input id="name" placeholder="Your name (optional)">
-    </div>
-    <div id="chat" class="chat"></div>
-    <div class="row" style="margin-top:8px">
-      <input id="msg" placeholder="Type a message…" disabled>
-      <button id="send" class="btn" disabled>Send</button>
-    </div>
-  </div>
+    <section class="window chat-window" aria-labelledby="chatTitle">
+      <div class="title-bar">
+        <span class="title-icon" aria-hidden="true">IM</span>
+        <span id="chatTitle">Instant Message</span>
+        <span class="title-meta">Direct Connection</span>
+      </div>
+      <nav class="menu-bar" aria-label="Chat information"><span>Private</span><span>Encrypted</span><span>Two people</span></nav>
+      <div class="window-body">
+        <div class="identity-bar">
+          <label for="name">Screen name:</label>
+          <input id="name" type="text" autocomplete="nickname" placeholder="Me (optional)">
+        </div>
+        <div id="chat" class="chat" role="log" aria-live="polite" aria-label="Message transcript">
+          <div class="chat-empty"><div><strong>No messages yet</strong>Connect to a buddy to begin chatting.</div></div>
+        </div>
+        <div class="composer">
+          <label class="sr-only" for="msg">Message</label>
+          <input id="msg" type="text" autocomplete="off" placeholder="Type a message..." disabled>
+          <button id="send" class="btn primary" type="button" disabled>Send</button>
+        </div>
+      </div>
+    </section>
+  </main>
 </div>
 
 <script>
-/* ---------- shorthands ---------- */
 const $ = id => document.getElementById(id);
 const roleInputs = document.querySelectorAll('input[name="role"]');
 
-
-/* ---------- state ---------- */
 let role = 'host';
 let pc, dc;
 
-/* ---------- config ---------- */
 const rtcConfig = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
@@ -108,234 +427,231 @@ const rtcConfig = {
   iceCandidatePoolSize: 10
 };
 
-/* ---------- ui helpers ---------- */
-function pill(el, text, cls=""){ el.textContent=text; el.className="pill "+cls; }
-function setStatus(t,c){ $('status').textContent=t; $('status').style.color=c||""; }
-function addMsg(name, text, mine=false){
-  const div=document.createElement('div'); div.className='msg '+(mine?'me':'peer');
-  const b=document.createElement('div'); b.className='bubble'; b.textContent=(name?name+': ':'')+text;
-  div.appendChild(b); $('chat').appendChild(div); $('chat').scrollTop=$('chat').scrollHeight;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+function pill(el, text, cls = "") {
+  el.textContent = text;
+  el.className = "pill " + cls;
 }
-function enableChat(on){ $('msg').disabled=!on; $('send').disabled=!on; }
 
-/* ---------- robust blob handling ---------- */
+function setStatus(text, color) {
+  $('status').textContent = text;
+  $('status').style.color = color || "";
+}
+
+function emptyChat() {
+  $('chat').innerHTML = '<div class="chat-empty"><div><strong>No messages yet</strong>Connect to a buddy to begin chatting.</div></div>';
+}
+
+function addMsg(name, text, mine = false) {
+  const empty = $('chat').querySelector('.chat-empty');
+  if (empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'msg ' + (mine ? 'me' : 'peer');
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = (name ? name + ': ' : '') + text;
+  div.appendChild(bubble);
+  $('chat').appendChild(div);
+  $('chat').scrollTop = $('chat').scrollHeight;
+}
+
+function enableChat(on) {
+  $('msg').disabled = !on;
+  $('send').disabled = !on;
+}
+
 function pack(desc) {
-  // RTCSessionDescriptionInit -> Base64
   const json = JSON.stringify(desc);
   return btoa(unescape(encodeURIComponent(json)));
 }
+
 function unpackBase64(b64) {
   const json = decodeURIComponent(escape(atob(b64)));
   return JSON.parse(json);
 }
-function looksLikeJson(s){ return /^\s*\{/.test(s.trim()); }
-function looksLikeSdp(s){ return /^\s*v=0\s*/.test(s.trim()); }
 
-/* ---------- peer connection ---------- */
-function setupPC(){
-  if(pc){ try{pc.close();}catch{} }
+function looksLikeJson(value) { return /^\s*\{/.test(value.trim()); }
+function looksLikeSdp(value) { return /^\s*v=0\s*/.test(value.trim()); }
+
+function setupPC() {
+  if (pc) {
+    try { pc.close(); } catch {}
+  }
   pc = new RTCPeerConnection(rtcConfig);
 
   pc.onconnectionstatechange = () => {
-    const s = pc.connectionState;
-    pill($('pcState'), s, s==='connected'?'ok':(s==='failed'||s==='closed'?'bad':'warn'));
-    if (s==='connected' || s==='completed') { enableChat(true); setStatus('PC connected ✓','#7dff8b'); }
-    if (s==='disconnected'||s==='failed'||s==='closed') enableChat(false);
-
+    const state = pc.connectionState;
+    pill($('pcState'), state, state === 'connected' ? 'ok' : (state === 'failed' || state === 'closed' ? 'bad' : 'warn'));
+    if (state === 'connected' || state === 'completed') {
+      enableChat(true);
+      setStatus('PC connected', '#008000');
+    }
+    if (state === 'disconnected' || state === 'failed' || state === 'closed') enableChat(false);
   };
 
   pc.oniceconnectionstatechange = () => {
-    const s = pc.iceConnectionState;
-    pill($('iceState'), s, (s==='connected'||s==='completed')?'ok':(s==='failed'?'bad':'warn'));
-
+    const state = pc.iceConnectionState;
+    pill($('iceState'), state, (state === 'connected' || state === 'completed') ? 'ok' : (state === 'failed' ? 'bad' : 'warn'));
   };
 
-
-  // Non-trickle-ish: dump Base64 localDescription after candidates settle briefly
-  let gatherTimer=null;
+  let gatherTimer = null;
   pc.onicecandidate = () => {
     if (gatherTimer) clearTimeout(gatherTimer);
     gatherTimer = setTimeout(() => {
       if (pc.localDescription) $('local').value = pack(pc.localDescription);
     }, 300);
-
-
-
-
   };
 
-  if (role==='host') {
-    dc = pc.createDataChannel('chat',{ordered:true});
+  if (role === 'host') {
+    dc = pc.createDataChannel('chat', { ordered: true });
     wireDC(dc);
   } else {
-    pc.ondatachannel = (ev)=>{ dc = ev.channel; wireDC(dc); };
+    pc.ondatachannel = event => {
+      dc = event.channel;
+      wireDC(dc);
+    };
   }
 }
 
-function wireDC(channel){
+function wireDC(channel) {
   pill($('dcState'), 'connecting', 'warn');
 
-  channel.onopen = ()=>{
-    pill($('dcState'),'open','ok');
+  channel.onopen = () => {
+    pill($('dcState'), 'open', 'ok');
     enableChat(true);
     $('msg').focus();
-    setStatus('DataChannel open ✓','#7dff8b');
+    setStatus('DataChannel open', '#008000');
   };
 
-  channel.onclose = ()=>{
-    pill($('dcState'),'closed','bad');
+  channel.onclose = () => {
+    pill($('dcState'), 'closed', 'bad');
     enableChat(false);
-    setStatus('Disconnected','#ff7d7d');
+    setStatus('Disconnected', '#a00000');
   };
 
-  channel.onerror = (e)=>{
-    pill($('dcState'),'error','bad');
-    setStatus('DC error','orange');
-    console.error('DataChannel error:', e);
+  channel.onerror = error => {
+    pill($('dcState'), 'error', 'bad');
+    setStatus('DataChannel error', '#a00000');
+    console.error('DataChannel error:', error);
   };
 
-  channel.onmessage = (ev)=>{
-    try{
-      const {name,text}=JSON.parse(ev.data);
-      addMsg(name||'Peer', text, false);
-    }catch{
-      addMsg('Peer', String(ev.data), false);
+  channel.onmessage = event => {
+    try {
+      const { name, text } = JSON.parse(event.data);
+      addMsg(name || 'Peer', text, false);
+    } catch {
+      addMsg('Peer', String(event.data), false);
     }
   };
 }
 
-/* ---------- actions ---------- */
-async function createLocal(){
-  if(!pc) setupPC();
-  if(role==='host'){
+async function createLocal() {
+  if (!pc) setupPC();
+  if (role === 'host') {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    setStatus('Gathering ICE for offer…');
+    setStatus('Gathering network routes for offer...');
   } else {
-    if (!pc.remoteDescription){ setStatus('Set remote offer first', '#ffe57d'); return; }
+    if (!pc.remoteDescription) {
+      setStatus('Set the host connection info first', '#a65f00');
+      return;
+    }
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
-    setStatus('Gathering ICE for answer…');
+    setStatus('Gathering network routes for answer...');
   }
 }
 
-async function setRemote(){
-  try{
+async function setRemote() {
+  try {
     const raw = $('remote').value.trim();
-    if (!raw) { setStatus('Paste peer blob first', '#ffe57d'); return; }
-
+    if (!raw) {
+      setStatus('Paste your buddy\'s connection info first', '#a65f00');
+      return;
+    }
 
     let desc;
     if (looksLikeJson(raw)) {
-      // Proper JSON (sdp should include \r\n escapes)
       desc = JSON.parse(raw);
     } else if (/^[A-Za-z0-9+/=\s]+$/.test(raw) && !looksLikeSdp(raw)) {
-      // Base64 (preferred)
-      desc = unpackBase64(raw.replace(/\s+/g,''));
+      desc = unpackBase64(raw.replace(/\s+/g, ''));
     } else if (looksLikeSdp(raw)) {
-      // Raw SDP text pasted directly from some apps
-      desc = { type: (role === 'host' ? 'answer' : 'offer'), sdp: raw };
+      desc = { type: role === 'host' ? 'answer' : 'offer', sdp: raw };
     } else {
-      throw new Error('Unrecognized blob format');
-
-
-
-
-
-
-
+      throw new Error('Unrecognized connection info format');
     }
 
-    if(!pc) setupPC();
+    if (!pc) setupPC();
     await pc.setRemoteDescription(desc);
     setStatus(`Remote ${desc.type} set`);
-  }catch(e){
-    console.error(e);
-    setStatus('Invalid blob (try Base64 or raw SDP)', '#ff7d7d');
+  } catch (error) {
+    console.error(error);
+    setStatus('Invalid connection info (try Base64 or raw SDP)', '#a00000');
   }
 }
 
-function send(){
+function send() {
   const text = $('msg').value.trim();
-  if(!text) return;
-  if(!dc || dc.readyState!=='open'){
-    setStatus('Not connected (DC not open)', '#ffe57d');
+  if (!text) return;
+  if (!dc || dc.readyState !== 'open') {
+    setStatus('Not connected (message channel is not open)', '#a65f00');
     return;
   }
   const name = $('name').value.trim();
-  dc.send(JSON.stringify({name, text}));
-  addMsg(name||'Me', text, true);
-  $('msg').value='';
+  dc.send(JSON.stringify({ name, text }));
+  addMsg(name || 'Me', text, true);
+  $('msg').value = '';
 }
 
-function resetAll(){
-  try{ dc&&dc.close(); }catch{} try{ pc&&pc.close(); }catch{}
-  pc=null; dc=null;
-  $('local').value=''; $('remote').value='';
-  $('chat').innerHTML='';
+function resetAll() {
+  try { if (dc) dc.close(); } catch {}
+  try { if (pc) pc.close(); } catch {}
+  pc = null;
+  dc = null;
+  $('local').value = '';
+  $('remote').value = '';
+  emptyChat();
   enableChat(false);
-  pill($('pcState'),'idle'); pill($('iceState'),'idle'); pill($('dcState'),'idle');
-  setStatus('reset');
+  pill($('pcState'), 'idle');
+  pill($('iceState'), 'idle');
+  pill($('dcState'), 'idle');
+  setStatus('Ready');
 }
 
-/* ---------- wire up ---------- */
-roleInputs.forEach(r=>r.addEventListener('change',()=>{ role=r.value; resetAll(); setupPC(); }));
-$('btnCreate').onclick=createLocal;
-$('btnSetRemote').onclick=setRemote;
-$('btnCopy').onclick=async()=>{ 
-  const t=$('local').value.trim(); if(!t){ setStatus('Nothing to copy','#ffe57d'); return; }
-  try{ await navigator.clipboard.writeText(t); setStatus('Copied Base64 ✓','#7dff8b'); }catch{ setStatus('Copy failed','#ff7d7d'); }
-};
-$('btnReset').onclick=resetAll;
-$('send').onclick=send;
-$('msg').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); send(); }});
+roleInputs.forEach(input => input.addEventListener('change', () => {
+  role = input.value;
+  resetAll();
+  setupPC();
+}));
 
-/* ---------- init ---------- */
+$('btnCreate').onclick = createLocal;
+$('btnSetRemote').onclick = setRemote;
+$('btnCopy').onclick = async () => {
+  const text = $('local').value.trim();
+  if (!text) {
+    setStatus('Nothing to copy', '#a65f00');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    setStatus('Connection info copied', '#008000');
+  } catch {
+    setStatus('Copy failed', '#a00000');
+  }
+};
+$('btnReset').onclick = resetAll;
+$('send').onclick = send;
+$('msg').addEventListener('keydown', event => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    send();
+  }
+});
+
 setupPC();
 enableChat(false);
 
-// tip on file:// vs localhost
 if (location.protocol === 'file:') {
-  setStatus('Tip: use http://localhost or HTTPS (WebRTC may be restricted on file://)', '#ffe57d');
+  setStatus('Tip: use localhost or HTTPS if WebRTC is restricted on file://', '#a65f00');
 }
 </script>
 </body>
