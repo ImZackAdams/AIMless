@@ -3,7 +3,7 @@
 *A WebRTC chat app with absolutely no purpose, direction, or server*
 
 ```
-💀 10KB of pure chaos
+💀 20KB of pure nostalgia
 🚫 Zero dependencies 
 🤝 Two users max (more would require planning)
 📋 Connection via clipboard (like animals)
@@ -73,16 +73,16 @@ Peer: "I don't know"
 ```
 
 ### Step 4: Success(?)
-When all three pills turn green, you've achieved P2P. Your ISP is confused. Your firewall is crying. But you're chatting.
+When all three status lights turn green, you've achieved P2P. Your ISP is confused. Your firewall is crying. But you're chatting.
 
 ---
 
 ## 🏗️ Architecture (lmao)
 
 ```
-index.html (10KB of nightmares)
-├── CSS (dark mode because we code at 3am)
-├── HTML (two divs and a dream)
+index.html (20KB of nightmares)
+├── CSS (classic desktop chrome and beveled buttons)
+├── HTML (two tiny windows and a dream)
 └── JavaScript (where the magic/curse happens)
     ├── Copy/paste "signaling" (revolutionary)
     ├── WebRTC (doing heavy lifting)
@@ -134,14 +134,15 @@ const database = []; // That's it. That's the database.
 
 ## 🎨 UI/UX Masterclass
 
-- **Three pills** that change colors (green = good, red = bad, revolutionary UX)
+- **Two period-correct windows** for connection setup and instant messages
+- **Three buddy-style status rows** that change color as WebRTC wakes up
 - **Two textareas** for your blob needs
-- **One chat box** (wanting more is capitalism)
-- **Dark theme** (because light attracts bugs)
+- **One classic transcript** with screen names and timestamps
+- **Windows 95 chrome** because rounded cards had not been invented yet
 
-### Connection Status Pills
+### Connection Status Lights
 
-| Pill | What It Means | What It Really Means |
+| Row | What It Means | What It Really Means |
 |------|---------------|---------------------|
 | PC: `idle` | Not started | Procrastinating |
 | PC: `connecting` | Trying | WebRTC doing WebRTC things |
@@ -221,7 +222,7 @@ Do whatever you want with this cursed code. Email it. Print it. Fax it. Deploy i
 
 <p align="center">
   <sub>A project that shouldn't exist, but does</sub><br>
-  <sub>10KB of bad decisions</sub><br>
+  <sub>20KB of bad decisions</sub><br>
   <sub>🔥 This is fine 🔥</sub>
 </p>
 
